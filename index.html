@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Introduction</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html" class="active">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="model.html">Model / Method</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow">A monthly-updated data science project</p>
+    <h1>Predicting IMDb Ratings</h1>
+    <p class="subtitle">Can a film's rating be estimated before audiences ever weigh in? This project pulls title,
+    crew, and audience data from the IMDb developer API and tests several models against each other to find out.</p>
+  </section>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <section>
+    <h2>What this project does</h2>
+    <p>We collect structured movie data — genre, runtime, cast, release year, budget signals, and existing vote
+    counts — through the IMDb API, then compare a handful of machine learning models on how well they can predict a
+    title's IMDb rating. The goal isn't just accuracy: it's understanding <em>which</em> features actually move the
+    needle on how a film is received.</p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="num">3–4</span><span class="label">models compared</span></div>
+      <div class="stat"><span class="num">TBD</span><span class="label">titles in dataset</span></div>
+      <div class="stat"><span class="num">Monthly</span><span class="label">update cycle</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Project roadmap</h2>
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <span class="index">01</span>
+        <div><h3>Data collection</h3><p>Pull raw title, crew, and rating data from the IMDb developer API.</p></div>
+      </div>
+      <div class="pipeline-step">
+        <span class="index">02</span>
+        <div><h3>Cleaning &amp; EDA</h3><p>Handle missing values, engineer features, and explore what correlates with rating.</p></div>
+      </div>
+      <div class="pipeline-step">
+        <span class="index">03</span>
+        <div><h3>Modeling</h3><p>Train and compare 3–4 models, tune hyperparameters, evaluate on held-out data.</p></div>
+      </div>
+      <div class="pipeline-step">
+        <span class="index">04</span>
+        <div><h3>Conclusions</h3><p>Summarize what worked, what didn't, and what we'd try next.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>About this write-up</h2>
+    <div class="placeholder">
+      <span class="tag">Editable</span>
+      Replace this paragraph with your project's motivation: why IMDb ratings, why this dataset, and what
+      question you're personally trying to answer. A sentence or two on background/context works well here.
+    </div>
+  </section>
+</main>
+
+<footer>Updated September 2026 · Section 01 of 04</footer>
+
+</body>
+</html>

@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #12151A;
+  --surface: #1B1F27;
+  --surface-line: #2A2F3A;
+  --text: #EDEAE1;
+  --text-dim: #9CA3AF;
+  --gold: #C9A05C;
+  --red: #A8442E;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; line-height: 1.15; margin: 0 0 0.5em; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-top: 2.2em; }
+h3 { font-size: 1.2rem; color: var(--gold); font-weight: 500; }
+
+p { color: var(--text); max-width: 70ch; }
+p.dim, .dim { color: var(--text-dim); }
+
+a { color: var(--gold); }
+
+/* ---------- Nav (film-strip tabs) ---------- */
+.filmstrip-nav {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-line);
+}
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+.nav-brand {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 18px 20px 18px 0;
+  white-space: nowrap;
+  color: var(--text);
+  text-decoration: none;
+  border-right: 1px solid var(--surface-line);
+  margin-right: 8px;
+}
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tabs a {
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 20px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nav-tabs a:hover { color: var(--text); }
+.nav-tabs a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ---------- Layout ---------- */
+main { max-width: 720px; margin: 0 auto; padding: 56px 24px 96px; }
+main.wide { max-width: 900px; }
+
+.eyebrow { color: var(--gold); font-size: 0.85rem; font-weight: 500; margin-bottom: 12px; }
+
+.hero { padding-bottom: 8px; }
+.hero .subtitle { font-size: 1.15rem; color: var(--text-dim); max-width: 60ch; }
+
+.reel-divider {
+  display: flex; align-items: center; gap: 6px;
+  margin: 48px 0 32px;
+  color: var(--surface-line);
+}
+.reel-divider::before, .reel-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--surface-line);
+}
+.reel-divider span { display: flex; gap: 5px; }
+.reel-divider span i { width: 5px; height: 5px; border-radius: 50%; background: var(--surface-line); display: block; }
+
+/* ---------- Cards / stat blocks ---------- */
+.stat-row { display: flex; gap: 32px; flex-wrap: wrap; margin: 24px 0 8px; }
+.stat { min-width: 140px; }
+.stat .num { font-family: 'Fraunces', serif; font-size: 2.1rem; color: var(--gold); font-weight: 600; display: block; }
+.stat .label { color: var(--text-dim); font-size: 0.9rem; }
+
+/* ---------- Placeholder blocks (to be replaced monthly) ---------- */
+.placeholder {
+  border: 1px dashed var(--surface-line);
+  border-radius: 4px;
+  padding: 28px 24px;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.015);
+  margin: 20px 0 32px;
+  font-size: 0.92rem;
+}
+.placeholder .tag {
+  display: inline-block;
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+.placeholder img { max-width: 100%; border-radius: 3px; display: block; margin-top: 10px; }
+
+/* ---------- Code blocks ---------- */
+pre {
+  background: var(--surface);
+  border: 1px solid var(--surface-line);
+  border-radius: 4px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+code { font-family: 'SFMono-Regular', Consolas, monospace; color: #E3D9C6; }
+p code, li code { background: var(--surface); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+
+/* ---------- Tables ---------- */
+table { width: 100%; border-collapse: collapse; margin: 20px 0 32px; font-size: 0.92rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--surface-line); }
+th { color: var(--gold); font-weight: 500; font-size: 0.85rem; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Pipeline / sequence steps ---------- */
+.pipeline { display: flex; flex-direction: column; gap: 0; margin: 24px 0 32px; }
+.pipeline-step { display: flex; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--surface-line); }
+.pipeline-step:last-child { border-bottom: none; }
+.pipeline-step .index { font-family: 'Fraunces', serif; color: var(--gold); font-size: 1.3rem; min-width: 34px; }
+.pipeline-step h3 { margin: 0 0 4px; color: var(--text); }
+.pipeline-step p { margin: 0; font-size: 0.95rem; color: var(--text-dim); }
+
+/* ---------- Footer ---------- */
+footer {
+  border-top: 1px solid var(--surface-line);
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* ---------- Focus states / accessibility ---------- */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+
+@media (max-width: 600px) {
+  main { padding: 36px 18px 72px; }
+  .stat-row { gap: 20px; }
+}

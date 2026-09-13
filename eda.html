@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Data Prep / EDA</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html" class="active">DataPrep / EDA</a>
+      <a href="model.html">Model / Method</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 02</p>
+  <h1>Data Preparation &amp; EDA</h1>
+  <p class="subtitle">How the raw IMDb API response becomes a clean, model-ready dataset — and what the data
+  looks like once it's tidy.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <h2>Data source</h2>
+  <p>Data is pulled from the IMDb developer API. Each record includes attributes such as title, genre(s), release
+  year, runtime, cast/crew, and current vote count/rating.</p>
+
+  <div class="placeholder">
+    <span class="tag">Add this month</span>
+    Describe the exact API endpoint(s) used, the date range or sample pulled, and how many raw records you retrieved.
+  </div>
+
+  <h2>Cleaning steps</h2>
+  <div class="placeholder">
+    <span class="tag">Add this month</span>
+    List the cleaning decisions: missing value handling, deduplication, type conversions, outlier treatment, etc.
+  </div>
+
+  <pre><code>// Example placeholder — replace with your actual data-pull / cleaning code
+const response = await fetch(IMDB_API_ENDPOINT);
+const titles = await response.json();
+
+const cleaned = titles
+  .filter(t => t.rating != null)
+  .map(t => ({
+    id: t.id,
+    genres: t.genres,
+    runtimeMinutes: t.runtimeMinutes,
+    releaseYear: t.releaseYear,
+    numVotes: t.numVotes,
+    rating: t.rating,
+  }));
+</code></pre>
+
+  <h2>Exploratory findings</h2>
+  <p>Charts and summary stats go here as they're produced. Each month, add a new subsection below with the
+  chart image, a short caption, and one or two sentences on what it shows.</p>
+
+  <h3>Distribution of ratings</h3>
+  <div class="placeholder">
+    <span class="tag">Chart placeholder</span>
+    Drop your rating-distribution chart here.<br>
+    <img src="assets/eda-ratings-distribution.png" alt="Distribution of IMDb ratings in the dataset" onerror="this.style.display='none'">
+  </div>
+
+  <h3>Feature correlations</h3>
+  <div class="placeholder">
+    <span class="tag">Chart placeholder</span>
+    Drop your correlation heatmap or pairplot here.<br>
+    <img src="assets/eda-correlations.png" alt="Correlation heatmap of engineered features" onerror="this.style.display='none'">
+  </div>
+
+  <h2>Summary statistics</h2>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th class="num">Mean</th><th class="num">Std</th><th class="num">Min</th><th class="num">Max</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Rating</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Runtime (min)</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Num. votes</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Replace the dashes above with real summary statistics once the dataset is finalized.</p>
+
+</main>
+
+<footer>Updated September 2026 · Section 02 of 04</footer>
+
+</body>
+</html>

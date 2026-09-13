@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Model / Method</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="model.html" class="active">Model / Method</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 03</p>
+  <h1>Model &amp; Method</h1>
+  <p class="subtitle">The models under comparison, how they're trained, and how they're evaluated.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <h2>Models compared</h2>
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <span class="index">01</span>
+      <div><h3>Linear Regression</h3><p>Baseline model to establish a reference performance level.</p></div>
+    </div>
+    <div class="pipeline-step">
+      <span class="index">02</span>
+      <div><h3>Random Forest</h3><p>Captures non-linear relationships and feature interactions.</p></div>
+    </div>
+    <div class="pipeline-step">
+      <span class="index">03</span>
+      <div><h3>Gradient Boosting</h3><p>Sequential ensemble aimed at squeezing out extra accuracy.</p></div>
+    </div>
+    <div class="pipeline-step">
+      <span class="index">04</span>
+      <div><h3>[Fourth model]</h3><p>Add a fourth model here if used — e.g. XGBoost, a neural net, or SVR.</p></div>
+    </div>
+  </div>
+  <p class="dim">Edit the model list above to match what you actually run — swap names, descriptions, or drop the fourth step if you only use three.</p>
+
+  <h2>Training setup</h2>
+  <div class="placeholder">
+    <span class="tag">Add this month</span>
+    Describe the train/test split, cross-validation approach, feature scaling, and any hyperparameter tuning
+    (grid search, random search, etc.).
+  </div>
+
+  <pre><code>// Example placeholder — replace with your actual training code
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestRegressor(n_estimators=200, random_state=42)
+model.fit(X_train, y_train)
+</code></pre>
+
+  <h2>Evaluation metrics</h2>
+  <p>Models are compared using standard regression metrics on the held-out test set.</p>
+  <table>
+    <thead>
+      <tr><th>Model</th><th class="num">RMSE</th><th class="num">MAE</th><th class="num">R²</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Linear Regression</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Random Forest</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Gradient Boosting</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>[Fourth model]</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Fill in real metric values once models are trained.</p>
+
+  <h2>Feature importance</h2>
+  <div class="placeholder">
+    <span class="tag">Chart placeholder</span>
+    Drop your feature-importance chart here (e.g. from the Random Forest or Gradient Boosting model).<br>
+    <img src="assets/model-feature-importance.png" alt="Feature importance chart" onerror="this.style.display='none'">
+  </div>
+
+</main>
+
+<footer>Updated September 2026 · Section 03 of 04</footer>
+
+</body>
+</html>
