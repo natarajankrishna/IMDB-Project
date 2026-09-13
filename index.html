@@ -23,56 +23,92 @@
 <main>
   <section class="hero">
     <p class="eyebrow">A monthly-updated data science project</p>
-    <h1>Predicting IMDb Ratings</h1>
-    <p class="subtitle">Can a film's rating be estimated before audiences ever weigh in? This project pulls title,
-    crew, and audience data from the IMDb developer API and tests several models against each other to find out.</p>
+    <h1>What Makes a Film Resonate</h1>
+    <p class="subtitle">Understanding the measurable and cultural factors behind how audiences rate movies.</p>
+  </section>
+
+  <img src="assets/intro-hero.jpg" alt="Vintage film reel and cinema strip" style="width:100%; border-radius:4px; margin: 8px 0 32px;" onerror="this.style.display='none'">
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <section>
+    <h2>Introduction</h2>
+
+    <p>Every year, thousands of feature films are released across theaters, streaming platforms, and festival
+    circuits, and each one is eventually reduced to a single number: an aggregate audience rating. On IMDb alone,
+    hundreds of thousands of votes are cast on any given popular title, blending into a weighted score that
+    shapes how a film is discovered, discussed, and remembered. Yet the path from a finished film to that number
+    is anything but simple. A movie's reception depends on a tangle of factors — genre conventions, runtime,
+    pacing, cast recognition, directorial reputation, marketing reach, cultural timing, and the shifting tastes
+    of the audiences who watch it. Some of these factors are structural and measurable, like runtime or release
+    year; others are far more subjective, like tone, originality, or emotional resonance. Understanding which of
+    these factors correlate with how audiences rate films, and how strongly, offers a window into something
+    broader than the film industry alone: how large groups of people collectively judge creative work. Audience
+    ratings are, in effect, a crowdsourced verdict on quality, and studying the patterns behind them reveals as
+    much about collective taste and behavior as it does about the films themselves. This makes the subject a rich
+    intersection of media studies, cultural analysis, and quantitative pattern-finding. Because rating platforms
+    increasingly influence what gets watched next — through recommendation algorithms, curated lists, and word of
+    mouth — the forces shaping a rating are not just descriptive of the past, but influential over what audiences
+    will encounter in the future. A deeper understanding of these dynamics has value well beyond entertainment
+    trivia; it touches on how information, popularity, and perceived quality circulate in a media-saturated world.</p>
+
+    <p>The stakes of understanding audience reception extend to a wide range of people and institutions. Film
+    studios and production companies use audience and critic reception to decide where to invest in sequels,
+    spin-offs, or entirely new projects, making the underlying drivers of reception a matter of real financial
+    consequence. Streaming platforms rely heavily on aggregate ratings to power recommendation engines that
+    determine what tens of millions of subscribers see first when they open an app, meaning that patterns in
+    rating behavior can quietly shape cultural consumption at scale. Marketing teams use early reception signals
+    to adjust release strategies, advertising spend, and awards-season campaigns. Independent and first-time
+    filmmakers, who lack the marketing budgets of major studios, are often more dependent on organic audience
+    reception to gain visibility, making an understanding of what drives ratings especially consequential for
+    them. Film critics and journalists interpret and sometimes challenge the crowd's verdict, creating a dialogue
+    between expert and popular opinion that has shifted considerably since the rise of user-review platforms.
+    Even everyday viewers, scrolling through a streaming catalog trying to decide what to watch next, are
+    directly affected by these dynamics, since the ratings and recommendations they see are downstream of the
+    same reception patterns. Prior research in this space has largely approached the topic from a commercial
+    angle, focusing on predicting box-office revenue from pre-release signals such as budget, star power, and
+    genre, or on sentiment analysis of written reviews to gauge critical reception. Other work, most notably
+    around the Netflix Prize competition in the mid-2000s, focused on predicting individual user preferences
+    rather than aggregate audience consensus. Comparatively less attention has been paid to the structural,
+    non-financial attributes of a film — such as runtime, genre combinations, release timing, and franchise
+    status — and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
+    project aims to explore.</p>
   </section>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <section>
-    <h2>What this project does</h2>
-    <p>We collect structured movie data — genre, runtime, cast, release year, budget signals, and existing vote
-    counts — through the IMDb API, then compare a handful of machine learning models on how well they can predict a
-    title's IMDb rating. The goal isn't just accuracy: it's understanding <em>which</em> features actually move the
-    needle on how a film is received.</p>
-
-    <div class="stat-row">
-      <div class="stat"><span class="num">3–4</span><span class="label">models compared</span></div>
-      <div class="stat"><span class="num">TBD</span><span class="label">titles in dataset</span></div>
-      <div class="stat"><span class="num">Monthly</span><span class="label">update cycle</span></div>
-    </div>
+    <h2>Research questions</h2>
+    <p class="dim">Ten questions this project aims to explore using data drawn from the IMDb developer API.</p>
+    <ol style="padding-left: 22px; color: var(--text);">
+      <li>Do certain genres consistently receive higher or lower audience ratings than others across years?</li>
+      <li>Has the average IMDb rating of released films shifted meaningfully over the past several decades?</li>
+      <li>Is there a relationship between a film's runtime and the rating it receives from audiences?</li>
+      <li>Do films released during particular seasons or around major holidays tend to be rated differently
+        than those released at other times of year?</li>
+      <li>How does the number of votes a film receives relate to how extreme (very high or very low) its
+        rating tends to be?</li>
+      <li>Are sequels and franchise entries rated differently, on average, than standalone or original films?</li>
+      <li>Does a film's country of origin or primary language correlate with differences in its recorded
+        IMDb rating?</li>
+      <li>Do ratings shift meaningfully in the months and years after release, compared to the rating a film
+        holds in its first weeks?</li>
+      <li>Is there a relationship between the number of genres tagged to a film and how audiences rate it?</li>
+      <li>Has the distribution of audience ratings changed since the rise of streaming platforms, compared to
+        the traditional theatrical era?</li>
+    </ol>
   </section>
 
   <section>
-    <h2>Project roadmap</h2>
-    <div class="pipeline">
-      <div class="pipeline-step">
-        <span class="index">01</span>
-        <div><h3>Data collection</h3><p>Pull raw title, crew, and rating data from the IMDb developer API.</p></div>
-      </div>
-      <div class="pipeline-step">
-        <span class="index">02</span>
-        <div><h3>Cleaning &amp; EDA</h3><p>Handle missing values, engineer features, and explore what correlates with rating.</p></div>
-      </div>
-      <div class="pipeline-step">
-        <span class="index">03</span>
-        <div><h3>Modeling</h3><p>Train and compare 3–4 models, tune hyperparameters, evaluate on held-out data.</p></div>
-      </div>
-      <div class="pipeline-step">
-        <span class="index">04</span>
-        <div><h3>Conclusions</h3><p>Summarize what worked, what didn't, and what we'd try next.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2>About this write-up</h2>
-    <div class="placeholder">
-      <span class="tag">Editable</span>
-      Replace this paragraph with your project's motivation: why IMDb ratings, why this dataset, and what
-      question you're personally trying to answer. A sentence or two on background/context works well here.
-    </div>
+    <h2>What the data can support</h2>
+    <p>The IMDb developer API provides structured, title-level fields — genre tags, runtime, release date,
+    country and language metadata, franchise/sequel relationships (via related titles), and current vote
+    count and rating — which is sufficient to explore all ten questions above at a descriptive and correlational
+    level. Time-based questions (2, 4, 8, 10) are supported as long as historical release-date data is
+    retained across the pulled sample; vote-based questions (5) only need vote count and rating fields already
+    planned for collection. Full implementation, including the actual data pull, cleaning, and analysis, is
+    planned for next month's update — this write-up establishes the questions and scope the data collection will
+    be designed around.</p>
   </section>
 </main>
 
