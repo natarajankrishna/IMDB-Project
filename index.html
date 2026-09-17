@@ -38,7 +38,7 @@
     circuits, and each one is eventually reduced to a single number: an aggregate audience rating. On IMDb alone,
     hundreds of thousands of votes are cast on any given popular title, blending into a weighted score that
     shapes how a film is discovered, discussed, and remembered. Yet the path from a finished film to that number
-    is anything but simple. A movie's reception depends on a tangle of factors — genre conventions, runtime,
+    is anything but simple. A movie's reception depends on a tangle of factors: genre conventions, runtime,
     pacing, cast recognition, directorial reputation, marketing reach, cultural timing, and the shifting tastes
     of the audiences who watch it. Some of these factors are structural and measurable, like runtime or release
     year; others are far more subjective, like tone, originality, or emotional resonance. Understanding which of
@@ -47,8 +47,8 @@
     ratings are, in effect, a crowdsourced verdict on quality, and studying the patterns behind them reveals as
     much about collective taste and behavior as it does about the films themselves. This makes the subject a rich
     intersection of media studies, cultural analysis, and quantitative pattern-finding. Because rating platforms
-    increasingly influence what gets watched next — through recommendation algorithms, curated lists, and word of
-    mouth — the forces shaping a rating are not just descriptive of the past, but influential over what audiences
+    increasingly influence what gets watched next, through recommendation algorithms, curated lists, and word of
+    mouth; the forces shaping a rating are not just descriptive of the past, but influential over what audiences
     will encounter in the future. A deeper understanding of these dynamics has value well beyond entertainment
     trivia; it touches on how information, popularity, and perceived quality circulate in a media-saturated world.</p>
 
@@ -70,8 +70,8 @@
     genre, or on sentiment analysis of written reviews to gauge critical reception. Other work, most notably
     around the Netflix Prize competition in the mid-2000s, focused on predicting individual user preferences
     rather than aggregate audience consensus. Comparatively less attention has been paid to the structural,
-    non-financial attributes of a film — such as runtime, genre combinations, release timing, and franchise
-    status — and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
+    non-financial attributes of a film; such as runtime, genre combinations, release timing, and franchise
+    status and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
     project aims to explore.</p>
   </section>
 
@@ -92,8 +92,8 @@
       <li>Are sequels and franchise entries rated differently, on average, than standalone or original films?</li>
       <li>Does a film's country of origin or primary language correlate with differences in its recorded
         IMDb rating?</li>
-      <li>Does the breadth of a film's international release — how many countries or regions it was
-        distributed in — relate to how audiences rate it?</li>
+      <li>Does the breadth of a film's international release; how many countries or regions it was
+        distributed in; relate to how audiences rate it?</li>
       <li>Is there a relationship between the number of genres tagged to a film and how audiences rate it?</li>
       <li>Has the distribution of audience ratings changed since the rise of streaming platforms, compared to
         the traditional theatrical era?</li>
@@ -103,14 +103,14 @@
   <section>
     <h2>What the data can support</h2>
     <p>Two free, legitimate sources support this project. The <strong>IMDb Non-Commercial Datasets</strong>
-    (developer.imdb.com/non-commercial-datasets) provide bulk, official IMDb data — title metadata, genres,
-    runtime, release year, ratings, vote counts, regional title variants, and director credits — refreshed
+    (developer.imdb.com/non-commercial-datasets) provide bulk, official IMDb data: title metadata, genres,
+    runtime, release year, ratings, vote counts, regional title variants, and director credits, refreshed
     daily and free for personal, non-commercial use. This alone supports questions 1, 2, 3, 5, 6 (heuristically),
     8, 9, and 10. The <strong>OMDb API</strong> (omdbapi.com), a free-tier public API, is used to enrich a
-    sample of titles with fields the bulk datasets don't include — country, language, and full release
-    date — which supports questions 4 and 7. Together, these two sources cover all ten questions above at a
-    descriptive and correlational level. Full collection, cleaning, and exploratory analysis — including exact
-    endpoints, sample size, and methodology — are documented on the DataPrep/EDA tab.</p>
+    sample of titles with fields the bulk datasets don't include: country, language, and full release
+    date, which supports questions 4 and 7. Together, these two sources cover all ten questions above at a
+    descriptive and correlational level. Full collection, cleaning, and exploratory analysis, including exact
+    endpoints, sample size, and methodology are documented on the DataPrep/EDA tab.</p>
   </section>
 </main>
 
