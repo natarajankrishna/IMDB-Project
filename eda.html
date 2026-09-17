@@ -23,72 +23,207 @@
 <main class="wide">
   <p class="eyebrow">Section 02</p>
   <h1>Data Preparation &amp; EDA</h1>
-  <p class="subtitle">How the raw IMDb API response becomes a clean, model-ready dataset — and what the data
-  looks like once it's tidy.</p>
+  <p class="subtitle">Where the data came from, how it was cleaned, and what the first exploratory look
+  reveals — before any modeling begins.</p>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
-  <h2>Data source</h2>
-  <p>Data is pulled from the IMDb developer API. Each record includes attributes such as title, genre(s), release
-  year, runtime, cast/crew, and current vote count/rating.</p>
+  <!-- ============================================================ -->
+  <h2>Data sources</h2>
 
-  <div class="placeholder">
-    <span class="tag">Add this month</span>
-    Describe the exact API endpoint(s) used, the date range or sample pulled, and how many raw records you retrieved.
-  </div>
+  <p>Two free, publicly available sources were used. The official IMDb API was considered first but ruled
+  out — it is an enterprise product distributed exclusively through AWS Data Exchange, with entry pricing
+  around $150,000/year, and there is no free public tier. The two sources below are the legitimate free
+  alternatives used instead.</p>
 
-  <h2>Cleaning steps</h2>
-  <div class="placeholder">
-    <span class="tag">Add this month</span>
-    List the cleaning decisions: missing value handling, deduplication, type conversions, outlier treatment, etc.
-  </div>
+  <h3>1. IMDb Non-Commercial Datasets</h3>
+  <p>Official IMDb data, free for personal and non-commercial use, refreshed daily.</p>
+  <table>
+    <thead><tr><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Website</td><td><a href="https://developer.imdb.com/non-commercial-datasets/" target="_blank">developer.imdb.com/non-commercial-datasets</a></td></tr>
+      <tr><td>Direct file host</td><td><a href="https://datasets.imdbws.com/" target="_blank">datasets.imdbws.com</a></td></tr>
+      <tr><td>Files used</td><td>title.basics.tsv.gz, title.ratings.tsv.gz, title.akas.tsv.gz, title.crew.tsv.gz, name.basics.tsv.gz</td></tr>
+      <tr><td>License</td><td>Personal / non-commercial use only — processed data is kept local, not redistributed</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Direct links to the exact files pulled:
+    <a href="https://datasets.imdbws.com/title.basics.tsv.gz" target="_blank">title.basics.tsv.gz</a> ·
+    <a href="https://datasets.imdbws.com/title.ratings.tsv.gz" target="_blank">title.ratings.tsv.gz</a> ·
+    <a href="https://datasets.imdbws.com/title.akas.tsv.gz" target="_blank">title.akas.tsv.gz</a> ·
+    <a href="https://datasets.imdbws.com/title.crew.tsv.gz" target="_blank">title.crew.tsv.gz</a> ·
+    <a href="https://datasets.imdbws.com/name.basics.tsv.gz" target="_blank">name.basics.tsv.gz</a>
+  </p>
 
-  <pre><code>// Example placeholder — replace with your actual data-pull / cleaning code
-const response = await fetch(IMDB_API_ENDPOINT);
-const titles = await response.json();
+  <h3>2. OMDb API</h3>
+  <p>Used to enrich a sample of titles with fields the bulk datasets don't include: country, language,
+  and full release date.</p>
+  <table>
+    <thead><tr><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Website</td><td><a href="https://www.omdbapi.com/" target="_blank">omdbapi.com</a></td></tr>
+      <tr><td>Core endpoint</td><td><code>https://www.omdbapi.com/</code></td></tr>
+      <tr><td>Example GET request</td><td><code>https://www.omdbapi.com/?i=tt0111161&amp;apikey=YOUR_KEY</code></td></tr>
+      <tr><td>License / tier</td><td>Free tier — 1,000 requests/day, non-commercial use</td></tr>
+    </tbody>
+  </table>
 
-const cleaned = titles
-  .filter(t => t.rating != null)
-  .map(t => ({
-    id: t.id,
-    genres: t.genres,
-    runtimeMinutes: t.runtimeMinutes,
-    releaseYear: t.releaseYear,
-    numVotes: t.numVotes,
-    rating: t.rating,
-  }));
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>Collection &amp; cleaning methodology</h2>
+
+  <p>title.basics alone contains tens of millions of rows spanning every title type IMDb tracks (TV
+  episodes, shorts, video games, etc.), so it was read and filtered in memory-bounded chunks rather than
+  loaded all at once — keeping only feature-length movies released in 1970 or later. This was merged with
+  title.ratings on the shared title identifier (tconst) to produce the raw dataset below.</p>
+
+  <pre><code># Core filtering logic used while streaming through title.basics.tsv.gz in chunks
+movies = chunk[(chunk["titleType"] == "movie") & (chunk["isAdult"] == "0")]
+movies["startYear"] = pd.to_numeric(movies["startYear"], errors="coerce")
+movies = movies[movies["startYear"] >= 1970]
+
+# Merged with ratings on the shared IMDb title ID
+raw_df = basics.merge(ratings, on="tconst", how="inner")
+
+# Example OMDb enrichment call — tconst IS the IMDb ID, so no title-matching needed
+resp = requests.get("https://www.omdbapi.com/", params={"i": tconst, "apikey": API_KEY})
 </code></pre>
 
-  <h2>Exploratory findings</h2>
-  <p>Charts and summary stats go here as they're produced. Each month, add a new subsection below with the
-  chart image, a short caption, and one or two sentences on what it shows.</p>
+  <p>From the raw merge, rows missing runtime, year, or genre were dropped, titles with fewer than 100
+  votes were excluded (to stop obscure titles with a handful of votes distorting averages), and runtimes
+  outside a 40–300 minute range were dropped as likely data errors or non-feature content. Because the
+  full cleaned catalog still ran into the hundreds of thousands of rows — more than a standard notebook
+  environment can comfortably hold in memory alongside the subsequent full-file scans of title.akas and
+  name.basics — the cleaned dataset was reduced to a <strong>stratified random sample of 30,000 movies,
+  drawn evenly across each decade from 1970 onward</strong>. This is a deliberate choice to keep the
+  dataset representative across time rather than skewed toward the much larger volume of recent releases,
+  not an artifact of the analysis breaking down.</p>
 
-  <h3>Distribution of ratings</h3>
   <div class="placeholder">
-    <span class="tag">Chart placeholder</span>
-    Drop your rating-distribution chart here.<br>
-    <img src="assets/eda-ratings-distribution.png" alt="Distribution of IMDb ratings in the dataset" onerror="this.style.display='none'">
+    <span class="tag">Fill in from your run</span>
+    Report your actual row counts here: how many rows were in the raw merged dataset, how many remained
+    after cleaning (before sampling), and confirm the final sampled size (should be 30,000 unless you
+    changed SAMPLE_LIMIT).
   </div>
 
-  <h3>Feature correlations</h3>
-  <div class="placeholder">
-    <span class="tag">Chart placeholder</span>
-    Drop your correlation heatmap or pairplot here.<br>
-    <img src="assets/eda-correlations.png" alt="Correlation heatmap of engineered features" onerror="this.style.display='none'">
-  </div>
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
+  <!-- ============================================================ -->
+  <h2>Raw data vs. cleaned data</h2>
+  <p>A small sample of rows, shown before and after cleaning — not the full dataset.</p>
+
+  <h3>Before cleaning</h3>
+  <div class="placeholder" style="padding: 8px;">
+    <img src="assets/raw_data_sample.png" alt="Sample of raw merged IMDb data before cleaning" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/raw_data_sample.png</span>')">
+  </div>
+  <p class="dim">Raw rows still carry IMDb's <code>\N</code> null marker, string-typed years, and
+  comma-packed genre strings — nothing has been cast to a usable type yet.</p>
+
+  <h3>After cleaning</h3>
+  <div class="placeholder" style="padding: 8px;">
+    <img src="assets/clean_data_sample.png" alt="Sample of cleaned IMDb data after processing" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/clean_data_sample.png</span>')">
+  </div>
+  <p class="dim">Nulls resolved, year/runtime cast to numeric, and three engineered columns added:
+  <code>num_genres</code> (count of tagged genres), <code>is_franchise_heuristic</code> (title-pattern
+  based sequel/franchise flag — approximate, not ground truth), and <code>era</code> (theatrical vs.
+  streaming, split at 2015).</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>Exploratory visualizations</h2>
+  <p class="dim">Fourteen visualizations in total — ten map directly to the research questions from the
+  Introduction, four are cross-cutting or supporting context.</p>
+
+  <h3>Overall rating distribution</h3>
+  <img src="assets/eda-ratings-distribution.png" alt="Histogram of average IMDb ratings" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>What shape does the distribution take — roughly normal, skewed, multi-modal? Where does the bulk of the data sit?</div>
+
+  <h3>Q1 — Rating by genre</h3>
+  <img src="assets/eda-genre-boxplot.png" alt="Boxplot of rating by genre" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Which genres skew higher or lower? Any genre with unusually wide spread?</div>
+
+  <h3>Q2 — Mean rating by release year</h3>
+  <img src="assets/eda-rating-by-year.png" alt="Line chart of mean rating by release year" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Is there a visible trend, or does it stay roughly flat? Any notable inflection points?</div>
+
+  <h3>Q3 — Runtime vs. rating</h3>
+  <img src="assets/eda-runtime-vs-rating.png" alt="Scatter plot of runtime versus rating" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Does the trend line slope up, down, or stay flat? How much scatter is there around it?</div>
+
+  <h3>Q4 — Rating by release month</h3>
+  <img src="assets/eda-rating-by-month.png" alt="Bar chart of mean rating by release month" onerror="this.style.display='none'">
+  <p class="dim">Based on the OMDb-enriched sample only — the bulk IMDb datasets only record release
+  <em>year</em>, not month.</p>
+  <div class="placeholder"><span class="tag">Add your reading</span>Do any months stand out? Any pattern tied to award-season or summer-blockbuster timing?</div>
+
+  <h3>Q5 — Vote count vs. rating</h3>
+  <img src="assets/eda-votes-vs-rating.png" alt="Scatter plot of vote count versus rating on a log scale" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Do low-vote titles show more extreme ratings than high-vote titles? Does the spread narrow as votes increase?</div>
+
+  <h3>Q6 — Franchise vs. standalone films</h3>
+  <img src="assets/eda-franchise-violin.png" alt="Violin plot comparing franchise and standalone film ratings" onerror="this.style.display='none'">
+  <p class="dim">Franchise status here is a title-pattern heuristic (roman numerals, "Part 2", "Chapter
+  II", etc.) — not verified against an actual franchise/collection database, so treat this as
+  approximate.</p>
+  <div class="placeholder"><span class="tag">Add your reading</span>Is there a visible difference in the two distributions' shape or center?</div>
+
+  <h3>Q7 — Rating by country of origin</h3>
+  <img src="assets/eda-country-bar.png" alt="Bar chart of mean rating by country of origin" onerror="this.style.display='none'">
+  <p class="dim">Based on the OMDb-enriched sample, top 10 most frequent countries.</p>
+  <div class="placeholder"><span class="tag">Add your reading</span>Which countries rank highest/lowest? Could sample size per country be affecting this?</div>
+
+  <h3>Q8 — International release breadth vs. rating</h3>
+  <img src="assets/eda-international-releases.png" alt="Scatter plot of international release breadth versus rating" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Do more widely-released films rate higher, lower, or show no relationship?</div>
+
+  <h3>Q9 — Number of genres tagged vs. rating</h3>
+  <img src="assets/eda-genre-count-bar.png" alt="Bar chart of mean rating by number of genres tagged" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Do films with more genre tags rate higher (broader appeal) or lower (less focused)?</div>
+
+  <h3>Q10 — Theatrical era vs. streaming era</h3>
+  <img src="assets/eda-era-boxplot.png" alt="Boxplot comparing theatrical era and streaming era ratings" onerror="this.style.display='none'">
+  <p class="dim">Split at 2015, chosen as the point streaming platforms' original content became mainstream.</p>
+  <div class="placeholder"><span class="tag">Add your reading</span>Any visible shift in the median or spread between the two eras?</div>
+
+  <h3>Cross-cutting — Feature correlation heatmap</h3>
+  <img src="assets/eda-correlations.png" alt="Correlation heatmap of numeric features" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Which numeric features correlate most strongly with rating? Any surprising near-zero correlations?</div>
+
+  <h3>Cross-cutting — Missing data (pre-cleaning)</h3>
+  <img src="assets/eda-missing-data.png" alt="Bar chart of missing values per column in the raw data" onerror="this.style.display='none'">
+  <div class="placeholder"><span class="tag">Add your reading</span>Which columns had the most missing values in the raw data, and does that match what you'd expect?</div>
+
+  <h3>Bonus — Director filmography size vs. mean rating</h3>
+  <img src="assets/eda-director-filmography.png" alt="Scatter plot of director filmography size versus mean rating" onerror="this.style.display='none'">
+  <p class="dim">Limited to directors with at least 3 films in the sampled dataset.</p>
+  <div class="placeholder"><span class="tag">Add your reading</span>Do directors with larger filmographies in the sample cluster at a particular rating level?</div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
   <h2>Summary statistics</h2>
   <table>
     <thead>
       <tr><th>Feature</th><th class="num">Mean</th><th class="num">Std</th><th class="num">Min</th><th class="num">Max</th></tr>
     </thead>
     <tbody>
-      <tr><td>Rating</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Average rating</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Number of votes</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
       <tr><td>Runtime (min)</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>Num. votes</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Release year</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Number of genres</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
     </tbody>
   </table>
-  <p class="dim">Replace the dashes above with real summary statistics once the dataset is finalized.</p>
+  <p class="dim">Replace the dashes with the values from your <code>summary_statistics</code> output file.</p>
+
+  <h2>Data &amp; code availability</h2>
+  <p>The full raw and cleaned datasets, the OMDb-enriched sample, and the supporting akas/director lookups
+  are kept as local working files rather than published to this repository — both because IMDb's
+  non-commercial license restricts redistribution of its data, and because the files are too large for a
+  standard GitHub repository. The complete collection-and-cleaning script is available in this project's
+  <code>scripts/</code> folder for full reproducibility.</p>
 
 </main>
 
