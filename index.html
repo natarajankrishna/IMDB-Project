@@ -22,7 +22,7 @@
 
 <main>
   <section class="hero">
-    <p class="eyebrow">Machine Learning for data science project</p>
+    <p class="eyebrow">A monthly-updated data science project</p>
     <h1>What Makes a Film Resonate</h1>
     <p class="subtitle">Understanding the measurable and cultural factors behind how audiences rate movies.</p>
   </section>
@@ -79,7 +79,8 @@
 
   <section>
     <h2>Research questions</h2>
-    <p class="dim">Ten questions this project aims to explore using data drawn from the IMDb developer API.</p>
+    <p class="dim">Ten questions this project aims to explore, using data drawn from the IMDb Non-Commercial
+    Datasets and the OMDb API (see the DataPrep/EDA tab for full source details).</p>
     <ol style="padding-left: 22px; color: var(--text);">
       <li>Do certain genres consistently receive higher or lower audience ratings than others across years?</li>
       <li>Has the average IMDb rating of released films shifted meaningfully over the past several decades?</li>
@@ -91,8 +92,8 @@
       <li>Are sequels and franchise entries rated differently, on average, than standalone or original films?</li>
       <li>Does a film's country of origin or primary language correlate with differences in its recorded
         IMDb rating?</li>
-      <li>Do ratings shift meaningfully in the months and years after release, compared to the rating a film
-        holds in its first weeks?</li>
+      <li>Does the breadth of a film's international release — how many countries or regions it was
+        distributed in — relate to how audiences rate it?</li>
       <li>Is there a relationship between the number of genres tagged to a film and how audiences rate it?</li>
       <li>Has the distribution of audience ratings changed since the rise of streaming platforms, compared to
         the traditional theatrical era?</li>
@@ -101,12 +102,15 @@
 
   <section>
     <h2>What the data can support</h2>
-    <p>The IMDb developer API provides structured, title-level fields: genre tags, runtime, release date,
-    country and language metadata, franchise/sequel relationships (via related titles), and current vote
-    count and rating, which is sufficient to explore all ten questions above at a descriptive and correlational
-    level. Time-based questions (2, 4, 8, 10) are supported as long as historical release-date data is
-    retained across the pulled sample; vote-based questions (5) only need vote count and rating fields already
-    planned for collection.</p>
+    <p>Two free, legitimate sources support this project. The <strong>IMDb Non-Commercial Datasets</strong>
+    (developer.imdb.com/non-commercial-datasets) provide bulk, official IMDb data — title metadata, genres,
+    runtime, release year, ratings, vote counts, regional title variants, and director credits — refreshed
+    daily and free for personal, non-commercial use. This alone supports questions 1, 2, 3, 5, 6 (heuristically),
+    8, 9, and 10. The <strong>OMDb API</strong> (omdbapi.com), a free-tier public API, is used to enrich a
+    sample of titles with fields the bulk datasets don't include — country, language, and full release
+    date — which supports questions 4 and 7. Together, these two sources cover all ten questions above at a
+    descriptive and correlational level. Full collection, cleaning, and exploratory analysis — including exact
+    endpoints, sample size, and methodology — are documented on the DataPrep/EDA tab.</p>
   </section>
 </main>
 
