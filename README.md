@@ -6,12 +6,15 @@ A 4-tab static website (Introduction, DataPrep/EDA, Model/Method, Conclusions) f
 
 ```
 imdb-site/
-├── index.html          Introduction (home page)
+├── index.html          Introduction
 ├── eda.html             DataPrep / EDA
-├── model.html           Model / Method
+├── clustering.html      Clustering
+├── pca.html              PCA
 ├── conclusions.html     Conclusions
 ├── css/style.css        Shared styling
-└── assets/              Put chart images / screenshots here
+├── scripts/             Python scripts (imdb_pipeline.py, clustering.py, pca.py)
+├── data/                 One small derived numeric CSV used by Clustering & PCA tabs
+└── assets/              Chart images / screenshots — see assets/README.txt for the full list
 ```
 
 ## Local preview before publishing
