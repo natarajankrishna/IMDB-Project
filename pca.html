@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — PCA</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html" class="active">PCA</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 04</p>
+  <h1>Principal Component Analysis</h1>
+  <p class="subtitle">Reducing six numeric movie attributes down to the handful of underlying patterns that
+  explain most of the variation between films.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+  <p>Principal Component Analysis (PCA) is a dimensionality reduction technique that transforms a set of
+  possibly-correlated numeric variables into a smaller set of new, uncorrelated variables called
+  <strong>principal components</strong>, ordered so that the first component captures as much of the
+  data's total variance as possible, the second captures as much of the <em>remaining</em> variance as
+  possible (while staying uncorrelated with the first), and so on.</p>
+
+  <p>At the mathematical core of PCA are <strong>eigenvalues and eigenvectors</strong> of the data's
+  covariance matrix. Each eigenvector points in a direction through the data (a potential new axis), and
+  its paired eigenvalue measures how much variance the data has along that direction. PCA simply finds the
+  eigenvectors with the largest eigenvalues — these become the principal components, i.e. the directions
+  along which the data varies the most. A direction with a tiny eigenvalue contributes very little
+  information and can often be dropped with minimal loss.</p>
+
+  <p><strong>Dimensionality reduction</strong> is the general practice of representing data with fewer
+  variables than it originally had, while preserving as much meaningful structure as possible.
+  High-dimensional data poses real, practical challenges: it's impossible to visualize directly beyond 3
+  dimensions, distances between points become less meaningful as dimensions increase (a phenomenon known
+  as the "curse of dimensionality"), correlated variables can make patterns harder to isolate, and many
+  downstream methods become slower or less stable as the number of input variables grows. By condensing
+  several correlated numeric attributes down to 2 or 3 principal components, PCA makes it possible to plot
+  and reason about relationships that would otherwise require tracking many variables simultaneously —
+  which is exactly the motivation for applying it here, given the six numeric movie attributes in use.</p>
+
+  <img src="assets/pca-overview-eigenvectors.png" alt="Illustrative example of eigenvectors on a 2D dataset" style="width:48%; display:inline-block; margin-right:2%;" onerror="this.style.display='none'">
+  <img src="assets/pca-overview-dimensionality.png" alt="Illustrative example of dimensionality reduction from 3D to 2D" style="width:48%; display:inline-block;" onerror="this.style.display='none'">
+  <p class="dim">Both illustrations above use small synthetic examples purely to demonstrate the concepts —
+  not the movie dataset itself.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+  <p>PCA requires the same kind of input as clustering: <strong>numeric, unlabeled data</strong>. Beyond
+  that, PCA specifically requires the data to be <strong>standardized</strong> (centered to zero mean, scaled
+  to unit variance) before use — because PCA identifies directions of maximum variance, a feature measured
+  on a much larger numeric scale (like raw vote counts, which range into the millions) would otherwise
+  dominate the components purely due to its units, not because it's actually more informative. The exact
+  same six-feature set used for clustering is reused here: <code>averageRating</code>,
+  <code>numVotes</code> (log-transformed), <code>runtimeMinutes</code>, <code>startYear</code>,
+  <code>num_genres</code>, and <code>region_count</code>.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/unsupervised-data-sample.png" alt="Sample of the unlabeled numeric feature set used for clustering and PCA" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/unsupervised-data-sample.png</span>')">
+  </div>
+
+  <p><strong>Link to the data sample:</strong>
+  <a href="data/unsupervised_features.csv" target="_blank">data/unsupervised_features.csv</a>
+  (same derived numeric dataset used for the Clustering tab).</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Full script: <a href="scripts/pca.py" target="_blank">scripts/pca.py</a></p>
+
+  <pre><code>from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+X_scaled = StandardScaler().fit_transform(X)   # X = the 6 numeric features
+
+pca = PCA(n_components=6, random_state=42)
+scores = pca.fit_transform(X_scaled)
+
+explained = pca.explained_variance_ratio_      # % variance per component
+loadings = pca.components_.T * (pca.explained_variance_ ** 0.5)  # for the biplot
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+
+  <h3>Scree plot — variance explained per component</h3>
+  <img src="assets/pca-scree-plot.png" alt="Scree plot showing variance explained by each principal component" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Report how much variance PC1 and PC2 each explain, and how many components are needed to reach roughly
+    80% cumulative variance (see your script's console output for exact percentages). Is the drop-off
+    sharp after the first couple components, or gradual?
+  </div>
+
+  <h3>Biplot — how the original variables relate to PC1 and PC2</h3>
+  <img src="assets/pca-biplot.png" alt="PCA biplot showing movies projected onto PC1/PC2 with variable loading vectors" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Describe what each arrow's direction and length means: direction shows which way that variable
+    increases, length shows how strongly it contributes to these two components. Which original variables
+    point in similar directions (suggesting they're correlated with each other)? Which point in opposite or
+    perpendicular directions?
+  </div>
+
+  <h3>PC1/PC2 scatter, colored by era</h3>
+  <img src="assets/pca-scatter-by-era.png" alt="Movies plotted on PC1 and PC2, colored by theatrical versus streaming era" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Do theatrical-era and streaming-era films separate into visibly different regions of PC1/PC2 space, or
+    largely overlap? What does that suggest about whether "era" is captured by these structural variables?
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add this month</span>
+    Summarize what PCA revealed about the structure of this numeric feature set: how many "real" dimensions
+    of variation exist among these 6 attributes, which original variables seem to drive the most
+    variance, and whether the reduced 2D view makes any patterns easier to see than the raw 6-dimensional
+    data did. Connect this back to the Introduction's framing — does reducing these attributes to their
+    core patterns say anything about what structurally distinguishes films from one another?
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 04 of 05</footer>
+
+</body>
+</html>

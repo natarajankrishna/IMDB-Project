@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Clustering</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html" class="active">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 03</p>
+  <h1>Clustering</h1>
+  <p class="subtitle">Using unsupervised clustering to look for natural structural groupings among films —
+  without telling the algorithm what those groups should look like in advance.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+  <p>Clustering is an unsupervised learning technique that groups data points based on similarity, without
+  using any predefined labels. The algorithm is only given the numeric features describing each item; it
+  has no notion of a "correct" grouping and instead organizes the data based purely on how close or far
+  points sit from each other in feature space.</p>
+
+  <p>There are two broad families of clustering approaches. <strong>Partitional clustering</strong> (most
+  commonly k-means) divides the data into a fixed number of non-overlapping groups, <em>k</em>, chosen in
+  advance, by iteratively assigning each point to its nearest cluster center and then recalculating those
+  centers until the assignments stabilize. <strong>Hierarchical clustering</strong> instead builds a nested
+  tree of groupings — starting with every point as its own cluster and successively merging the closest
+  pairs (an "agglomerative" or bottom-up approach) until everything belongs to one cluster — with no need to
+  decide <em>k</em> up front. The resulting tree, called a dendrogram, can be "cut" at different heights to
+  produce different numbers of clusters after the fact.</p>
+
+  <p>Both approaches depend on a chosen <strong>distance metric</strong> to define "closeness." Common
+  choices include Euclidean distance (straight-line distance, the default for k-means), Manhattan distance
+  (sum of absolute coordinate differences), and <strong>cosine similarity/distance</strong> (which measures
+  the angle between two feature vectors rather than their magnitude — useful when the overall scale of a
+  data point matters less than its relative proportions). This project uses standard Euclidean distance for
+  k-means and cosine distance for hierarchical clustering, as required.</p>
+
+  <p>Applied here, clustering is used purely for <strong>discovery</strong> — not prediction. The goal is to
+  see whether films naturally fall into distinct structural "types" based on measurable attributes (runtime,
+  genre count, release era, international reach, and audience engagement volume) with no rating-prediction
+  target involved. If coherent clusters emerge, that's evidence these structural attributes carry real
+  organizing signal; if they don't, that's an informative result too.</p>
+
+  <img src="assets/clustering-overview-partitional.png" alt="Illustrative example of partitional (k-means) clustering" style="width:48%; display:inline-block; margin-right:2%;" onerror="this.style.display='none'">
+  <img src="assets/clustering-overview-hierarchical.png" alt="Illustrative example of hierarchical clustering dendrogram" style="width:48%; display:inline-block;" onerror="this.style.display='none'">
+  <p class="dim">Both illustrations above use small synthetic examples purely to show how each method
+  organizes data — not the movie dataset itself.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+  <p>Clustering requires <strong>only unlabeled, numeric data</strong> — no text fields, no row identifiers
+  used as inputs, and no target/label column, since the entire point is to let the algorithm discover
+  structure on its own rather than fit it to a known answer. Six numeric features were engineered from the
+  cleaned movie dataset for this purpose: <code>averageRating</code>, <code>numVotes</code> (log-transformed,
+  since raw vote counts are heavily right-skewed), <code>runtimeMinutes</code>, <code>startYear</code>,
+  <code>num_genres</code>, and <code>region_count</code> (the number of distinct international regions a
+  title was released in, from the EDA tab's akas data). All six were standardized (zero mean, unit variance)
+  before clustering, since k-means and cosine-distance methods are both sensitive to the relative scale of
+  input features.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/unsupervised-data-sample.png" alt="Sample of the unlabeled numeric feature set used for clustering and PCA" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/unsupervised-data-sample.png</span>')">
+  </div>
+  <p class="dim">This same prepared feature set is used for both the Clustering and PCA tabs, since both
+  methods require the same kind of input.</p>
+
+  <p><strong>Link to the data sample:</strong>
+  <a href="data/unsupervised_features.csv" target="_blank">data/unsupervised_features.csv</a>
+  (a derived, numeric-only dataset — original IMDb text fields and titles are not redistributed, consistent
+  with IMDb's non-commercial data license).</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Full script: <a href="scripts/clustering.py" target="_blank">scripts/clustering.py</a></p>
+
+  <pre><code># K-MEANS — partitional clustering, Euclidean distance (sklearn default)
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+
+X_scaled = StandardScaler().fit_transform(X)   # X = the 6 numeric features
+
+for k in [3, 4, 5]:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
+    print(k, silhouette_score(X_scaled, km.labels_))
+
+
+# HIERARCHICAL CLUSTERING — cosine distance, average linkage
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist
+from sklearn.cluster import AgglomerativeClustering
+
+cosine_dist = pdist(X_scaled, metric="cosine")
+Z = linkage(cosine_dist, method="average")
+dendrogram(Z, truncate_mode="lastp", p=30)
+
+hclust = AgglomerativeClustering(n_clusters=k, metric="cosine", linkage="average").fit(X_scaled)
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+
+  <p>Because cosine-distance hierarchical clustering requires a full pairwise distance matrix (which does
+  not scale to tens of thousands of rows), both k-means and hierarchical clustering below were run on the
+  <strong>same subsample of 1,000 movies</strong> — the same subsample for both algorithms, so the
+  comparison between them is a fair, matched one.</p>
+
+  <h3>K-means at three different k values</h3>
+  <img src="assets/clustering-k-comparison.png" alt="K-means clustering results compared across three k values" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Report the silhouette score printed for each of k=3, 4, and 5 (see your script's console output).
+    Which looked most visually coherent?
+  </div>
+
+  <h3>Silhouette analysis — finding the "best" k</h3>
+  <img src="assets/clustering-silhouette-curve.png" alt="Silhouette score across a range of k values" onerror="this.style.display='none'">
+  <img src="assets/clustering-silhouette-plot.png" alt="Per-sample silhouette plot for the best k" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    State the best k identified by the silhouette method (printed in your script's console output as
+    "Best k by silhouette score"). Note whether any cluster's silhouette plot shows thin or negative
+    regions, which would suggest that cluster isn't well separated.
+  </div>
+
+  <h3>K-means clusters, visualized (non-dendrogram)</h3>
+  <img src="assets/clustering-scatter-pca2d.png" alt="K-means cluster assignments projected onto two principal components" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Describe what the clusters look like once projected onto 2 dimensions — are they well-separated,
+    overlapping, or roughly concentric?
+  </div>
+
+  <h3>Hierarchical clustering — dendrogram</h3>
+  <img src="assets/clustering-dendrogram.png" alt="Hierarchical clustering dendrogram using cosine distance" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Report the dendrogram-suggested k (printed in your script's console output). Explain how you read
+    that value off the dendrogram (where the largest vertical gap between merges occurs).
+  </div>
+
+  <h3>Hierarchical clusters, visualized — comparison to k-means</h3>
+  <img src="assets/clustering-hclust-scatter.png" alt="Hierarchical clustering assignments projected onto two principal components" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Your script prints an Adjusted Rand Index (ARI) comparing the k-means and hierarchical clustering
+    labels at the same k. Report that value here — note that ARI near 0 means the two methods found very
+    different groupings, while ARI near 1 means they largely agree. Compare the dendrogram-suggested k to
+    the silhouette-suggested k from k-means: do the two methods point to a similar number of natural
+    groups, or disagree?
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add this month</span>
+    Summarize what the clustering results suggest about structural "types" of films. Did a particular
+    k emerge as most defensible across both methods? What do the clusters seem to represent when you
+    examine which movies land in each one (e.g., look at a few example titles per cluster)? Does this
+    support, complicate, or have no bearing on the Introduction's framing — that structural attributes
+    might carry a detectable relationship to audience ratings?
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 03 of 05</footer>
+
+</body>
+</html>
