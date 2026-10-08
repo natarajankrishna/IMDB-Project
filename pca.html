@@ -76,6 +76,10 @@
     <img src="assets/unsupervised-data-sample.png" alt="Sample of the unlabeled numeric feature set used for clustering and PCA" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/unsupervised-data-sample.png</span>')">
   </div>
 
+  <p><strong>Link to the data sample:</strong>
+  <a href="data/unsupervised_features.csv" target="_blank">data/unsupervised_features.csv</a>
+  (same derived numeric dataset used for the Clustering tab).</p>
+
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <!-- ============================================================ -->
@@ -99,44 +103,63 @@ loadings = pca.components_.T * (pca.explained_variance_ ** 0.5)  # for the biplo
   <!-- ============================================================ -->
   <h2>(d) Results</h2>
 
+  <p class="dim">Run on the full prepared feature set — 122,872 movies.</p>
+
   <h3>Scree plot — variance explained per component</h3>
   <img src="assets/pca-scree-plot.png" alt="Scree plot showing variance explained by each principal component" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Report how much variance PC1 and PC2 each explain, and how many components are needed to reach roughly
-    80% cumulative variance (see your script's console output for exact percentages). Is the drop-off
-    sharp after the first couple components, or gradual?
-  </div>
+  <p>PC1 explains 35.3% of total variance on its own, and PC2 adds another 18.7%, bringing the first two
+  components to 54.0% combined. Reaching 80% cumulative variance takes 4 components (85.3% cumulative at
+  PC4), and nearly all variance (96.9%) is captured by 5 of the 6 original dimensions. The drop-off is
+  fairly gradual rather than sharp — no single component dominates overwhelmingly, and even the smallest
+  (PC6, at 3.1%) still carries some real signal. This gradual decline is consistent with the clustering
+  results: if one component had captured the vast majority of variance, that would point to a few sharply
+  distinct film types; instead, variation is spread across several roughly-comparable dimensions, matching
+  the continuous, non-clustered structure the silhouette and ARI results also suggested.</p>
 
   <h3>Biplot — how the original variables relate to PC1 and PC2</h3>
   <img src="assets/pca-biplot.png" alt="PCA biplot showing movies projected onto PC1/PC2 with variable loading vectors" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Describe what each arrow's direction and length means: direction shows which way that variable
-    increases, length shows how strongly it contributes to these two components. Which original variables
-    point in similar directions (suggesting they're correlated with each other)? Which point in opposite or
-    perpendicular directions?
+    <span class="tag">Add your reading — needs the actual chart</span>
+    This one requires looking at your real biplot image, since the arrow directions depend entirely on how
+    your specific data correlates. For each pair of arrows: if two point in nearly the same direction, those
+    variables tend to increase together across films in your dataset; if two point in opposite directions,
+    higher values of one tend to come with lower values of the other; if two are roughly perpendicular,
+    they vary independently. Longer arrows mean that variable contributes more strongly to PC1/PC2
+    specifically (a variable could still matter a lot overall while having a short arrow here, if its main
+    influence falls on PC3–PC6 instead).
   </div>
 
   <h3>PC1/PC2 scatter, colored by era</h3>
   <img src="assets/pca-scatter-by-era.png" alt="Movies plotted on PC1 and PC2, colored by theatrical versus streaming era" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Do theatrical-era and streaming-era films separate into visibly different regions of PC1/PC2 space, or
-    largely overlap? What does that suggest about whether "era" is captured by these structural variables?
+    <span class="tag">Add your reading — needs the actual chart</span>
+    Also needs visual inspection of your real chart: do the two era colors separate into visibly different
+    regions, or mostly overlap? Given startYear is one of the 6 input features, some separation is expected
+    by construction — the more informative question is whether the separation follows a single axis (one
+    component effectively encodes "era") or cuts diagonally across both PC1 and PC2.
   </div>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <!-- ============================================================ -->
   <h2>(e) Conclusions</h2>
+  <p>PCA shows that the six structural attributes are not redundant with one another: it takes four
+  principal components to retain about 85% of the variance and five to reach nearly 97%, so the data
+  cannot be squeezed into two dimensions without real loss. The first two components together capture
+  54.0% of the variance (35.3% and 18.7%), enough to make a 2D picture informative but not complete, and
+  worth reading with that caveat in mind.</p>
+  <p>The gradual decline in explained variance matches what the clustering tab found from a different
+  angle: structural variation among films is spread across several comparable dimensions rather than
+  concentrated in one or two dominant patterns. For the topic of audience ratings, that suggests no single
+  structural trait, or small bundle of traits, is likely to explain much on its own. Any link between how
+  a film is built and distributed and how audiences rate it will probably emerge from combinations of
+  attributes, which is exactly the situation where later modeling methods have something to add beyond
+  simple descriptive comparisons.</p>
   <div class="placeholder">
     <span class="tag">Add this month</span>
-    Summarize what PCA revealed about the structure of this numeric feature set: how many "real" dimensions
-    of variation exist among these 6 attributes, which original variables seem to drive the most
-    variance, and whether the reduced 2D view makes any patterns easier to see than the raw 6-dimensional
-    data did. Connect this back to the Introduction's framing — does reducing these attributes to their
-    core patterns say anything about what structurally distinguishes films from one another?
+    After reviewing your biplot, add one or two sentences naming which variables dominate PC1 and PC2 and
+    what that means in plain terms (for example, "PC1 largely contrasts widely released, heavily voted
+    films with narrowly released ones").
   </div>
 </main>
 
