@@ -39,7 +39,7 @@
     circuits, and each one is eventually reduced to a single number: an aggregate audience rating. On IMDb alone,
     hundreds of thousands of votes are cast on any given popular title, blending into a weighted score that
     shapes how a film is discovered, discussed, and remembered. Yet the path from a finished film to that number
-    is anything but simple. A movie's reception depends on a tangle of factors — genre conventions, runtime,
+    is anything but simple. A movie's reception depends on a tangle of factors: genre conventions, runtime,
     pacing, cast recognition, directorial reputation, marketing reach, cultural timing, and the shifting tastes
     of the audiences who watch it. Some of these factors are structural and measurable, like runtime or release
     year; others are far more subjective, like tone, originality, or emotional resonance. Understanding which of
@@ -48,8 +48,8 @@
     ratings are, in effect, a crowdsourced verdict on quality, and studying the patterns behind them reveals as
     much about collective taste and behavior as it does about the films themselves. This makes the subject a rich
     intersection of media studies, cultural analysis, and quantitative pattern-finding. Because rating platforms
-    increasingly influence what gets watched next — through recommendation algorithms, curated lists, and word of
-    mouth — the forces shaping a rating are not just descriptive of the past, but influential over what audiences
+    increasingly influence what gets watched next, through recommendation algorithms, curated lists, and word of
+    mouth, the forces shaping a rating are not just descriptive of the past, but influential over what audiences
     will encounter in the future. A deeper understanding of these dynamics has value well beyond entertainment
     trivia; it touches on how information, popularity, and perceived quality circulate in a media-saturated world.</p>
 
@@ -71,25 +71,25 @@
     genre, or on sentiment analysis of written reviews to gauge critical reception. Other work, most notably
     around the Netflix Prize competition in the mid-2000s, focused on predicting individual user preferences
     rather than aggregate audience consensus. Comparatively less attention has been paid to the structural,
-    non-financial attributes of a film — such as runtime, genre combinations, release timing, and franchise
-    status — and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
+    non-financial attributes of a film, such as runtime, genre combinations, release timing, and franchise
+    status and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
     project aims to explore.</p>
 
     <img src="assets/intro-clapperboard.jpg" alt="Film production clapperboard" style="width:100%; border-radius:4px; margin: 8px 0 24px;" onerror="this.style.display='none'">
 
     <p>Answering these questions requires moving past a single summary statistic and treating a film's
-    structural profile — its runtime, genre mix, release timing, geographic reach, and the volume and
-    intensity of audience engagement it draws — as a multi-dimensional signature rather than a handful of
+    structural profile its runtime, genre mix, release timing, geographic reach, and the volume and
+    intensity of audience engagement it draws as a multi-dimensional signature rather than a handful of
     disconnected numbers. Two complementary analytical approaches make this possible. Unsupervised
-    clustering can reveal whether films naturally group into distinct structural "types" — for instance,
+    clustering can reveal whether films naturally group into distinct structural types, for instance,
     long-runtime genre-blending releases with wide international distribution versus shorter, narrowly
-    genred films with more concentrated audiences — without ever being told in advance what those groups
+    genred films with more concentrated audiences, without ever being told in advance what those groups
     should look like. Dimensionality reduction techniques, particularly Principal Component Analysis, can
     then condense that multi-dimensional structural signature down to the handful of underlying patterns
     that explain most of the variation between films, making it possible to visualize and reason about
     relationships that would otherwise require tracking six or more numeric attributes simultaneously.
-    Applying these methods to structural, non-subjective attributes — deliberately setting aside plot,
-    dialogue, or critical commentary — tests whether measurable patterns in how a film is built and
+    Applying these methods to structural, non-subjective attributes, deliberately setting aside plot,
+    dialogue, or critical commentary, tests whether measurable patterns in how a film is built and
     distributed carry a detectable relationship to how audiences come to rate it, independent of anything
     a critic or marketer might say about its quality. The Clustering and PCA sections of this project walk
     through exactly that process: preparing the data these methods require, applying both techniques, and
