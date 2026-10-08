@@ -83,6 +83,11 @@
   <p class="dim">This same prepared feature set is used for both the Clustering and PCA tabs, since both
   methods require the same kind of input.</p>
 
+  <p><strong>Link to the data sample:</strong>
+  <a href="data/unsupervised_features.csv" target="_blank">data/unsupervised_features.csv</a>
+  (a derived, numeric-only dataset — original IMDb text fields and titles are not redistributed, consistent
+  with IMDb's non-commercial data license).</p>
+
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <!-- ============================================================ -->
@@ -123,62 +128,86 @@ hclust = AgglomerativeClustering(n_clusters=k, metric="cosine", linkage="average
   <strong>same subsample of 1,000 movies</strong> — the same subsample for both algorithms, so the
   comparison between them is a fair, matched one.</p>
 
+  <p class="dim">Run on the full prepared feature set of 122,872 movies, with a 1,000-row subsample used
+  specifically for k-means and hierarchical clustering comparison, as described above.</p>
+
   <h3>K-means at three different k values</h3>
   <img src="assets/clustering-k-comparison.png" alt="K-means clustering results compared across three k values" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Report the silhouette score printed for each of k=3, 4, and 5 (see your script's console output).
-    Which looked most visually coherent?
-  </div>
+  <p>Silhouette scores rose steadily as k increased across this initial comparison range: 0.195 at k=3,
+  0.212 at k=4, and 0.219 at k=5. None of these values is particularly high — silhouette scores run from
+  -1 to 1, and values in the 0.2–0.3 range generally indicate real but modest cluster structure, rather than
+  sharply separated groups. That's consistent with the nature of these features: runtime, vote count,
+  release year, genre count, and international reach are all continuous, naturally varying quantities for
+  real films, not attributes that would be expected to fall into a small number of tight, distinct camps.</p>
 
   <h3>Silhouette analysis — finding the "best" k</h3>
   <img src="assets/clustering-silhouette-curve.png" alt="Silhouette score across a range of k values" onerror="this.style.display='none'">
   <img src="assets/clustering-silhouette-plot.png" alt="Per-sample silhouette plot for the best k" onerror="this.style.display='none'">
+  <p>Searched across k=2 through k=10, the silhouette method identified <strong>k=2</strong> as the best
+  fit, with a score of 0.274 — higher than any of the k=3, 4, or 5 runs above. This result, combined with
+  PCA's finding (right) that a single component captures over a third of the total variance, points toward
+  the data having one dominant axis of structural variation that a 2-way split captures better than finer
+  partitions — rather than several genuinely distinct film "types."</p>
   <div class="placeholder">
     <span class="tag">Add your reading</span>
-    State the best k identified by the silhouette method (printed in your script's console output as
-    "Best k by silhouette score"). Note whether any cluster's silhouette plot shows thin or negative
-    regions, which would suggest that cluster isn't well separated.
+    Looking at the per-sample silhouette plot image above: does either of the two clusters at k=2 show a
+    wide band of low or negative silhouette values (thin wedge near zero or dipping below it)? That would
+    indicate that cluster is weakly separated even though it's the best split found.
   </div>
 
   <h3>K-means clusters, visualized (non-dendrogram)</h3>
   <img src="assets/clustering-scatter-pca2d.png" alt="K-means cluster assignments projected onto two principal components" onerror="this.style.display='none'">
   <div class="placeholder">
     <span class="tag">Add your reading</span>
-    Describe what the clusters look like once projected onto 2 dimensions — are they well-separated,
-    overlapping, or roughly concentric?
+    Describe what the two clusters look like once projected onto PC1/PC2 — is there a visible gap between
+    them, or do they blend into each other with a fuzzy boundary? A fuzzy boundary would match the modest
+    0.274 silhouette score; a crisp visual gap would be a bit surprising given that number.
   </div>
 
   <h3>Hierarchical clustering — dendrogram</h3>
   <img src="assets/clustering-dendrogram.png" alt="Hierarchical clustering dendrogram using cosine distance" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Report the dendrogram-suggested k (printed in your script's console output). Explain how you read
-    that value off the dendrogram (where the largest vertical gap between merges occurs).
-  </div>
+  <p>The dendrogram's largest-gap heuristic suggested <strong>k=5</strong> — notably different from
+  k-means's silhouette-preferred k=2. This divergence is informative rather than a contradiction: the two
+  methods use different distance metrics (Euclidean for k-means vs. cosine for hierarchical clustering) and
+  different criteria for choosing k (average silhouette across all points vs. the largest single jump in
+  merge distance). Cosine distance in particular measures the angle between feature vectors rather than
+  their absolute separation, so it can carve out more, finer-grained groups from the same data than a
+  magnitude-based method does.</p>
 
   <h3>Hierarchical clusters, visualized — comparison to k-means</h3>
   <img src="assets/clustering-hclust-scatter.png" alt="Hierarchical clustering assignments projected onto two principal components" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Your script prints an Adjusted Rand Index (ARI) comparing the k-means and hierarchical clustering
-    labels at the same k. Report that value here — note that ARI near 0 means the two methods found very
-    different groupings, while ARI near 1 means they largely agree. Compare the dendrogram-suggested k to
-    the silhouette-suggested k from k-means: do the two methods point to a similar number of natural
-    groups, or disagree?
-  </div>
+  <p>Comparing the two methods at the same, matched k (k=2), the Adjusted Rand Index between their
+  cluster assignments came out to <strong>0.504</strong>. ARI ranges from roughly -1 to 1, where 0 means
+  no better than random agreement and 1 means identical labelings — 0.50 sits in the middle, indicating the
+  two methods agree on the data's broad shape more often than not, but assign a meaningful share of movies
+  to different sides of the split. Combined with hclust's own preference for k=5 rather than k=2, the
+  overall picture is that k-means and hierarchical clustering see a similar underlying continuum in this
+  data, but diverge on exactly how finely to carve it up — neither method finds hard, unambiguous clusters,
+  which is the more informative finding than either k value in isolation.</p>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <!-- ============================================================ -->
   <h2>(e) Conclusions</h2>
+  <p>Across 122,872 movies described by six structural attributes, clustering found <em>some</em>
+  organization but not sharply separated film "types." Silhouette scores stayed modest throughout (0.195 at
+  k=3 up to a best of 0.274 at k=2), and the two clustering methods disagreed on how finely to divide the
+  data: k-means with silhouette analysis favored a simple two-way split, while the cosine-distance
+  dendrogram suggested five groups. At a matched k=2, the two methods agreed on roughly half of the
+  structure (Adjusted Rand Index 0.504), which is a meaningful but far from unanimous overlap.</p>
+  <p>For the project's central question, this is a useful negative-leaning result. Runtime, genre count,
+  release year, vote volume, international reach, and average rating do not cleanly sort films into
+  distinct camps; they vary along a continuum. That fits the Introduction's framing that a film's
+  reception depends on a tangle of overlapping factors rather than a few discrete categories, and it
+  suggests that any relationship between structure and rating is more likely to be gradual and
+  multi-factor than a matter of "which type of film is this." It also means clustering labels alone would
+  be a weak basis for later predictive work, which makes the continuous, component-based view from PCA a
+  natural companion analysis.</p>
   <div class="placeholder">
     <span class="tag">Add this month</span>
-    Summarize what the clustering results suggest about structural "types" of films. Did a particular
-    k emerge as most defensible across both methods? What do the clusters seem to represent when you
-    examine which movies land in each one (e.g., look at a few example titles per cluster)? Does this
-    support, complicate, or have no bearing on the Introduction's framing — that structural attributes
-    might carry a detectable relationship to audience ratings?
+    Optional: pull 3 to 5 example titles from each k=2 cluster and describe what separates them in plain
+    terms (for example older versus newer, or high-volume versus low-volume films). This turns the numeric
+    result into something a reader can picture.
   </div>
 </main>
 
