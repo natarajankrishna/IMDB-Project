@@ -119,24 +119,21 @@ loadings = pca.components_.T * (pca.explained_variance_ ** 0.5)  # for the biplo
   <h3>Biplot — how the original variables relate to PC1 and PC2</h3>
   <img src="assets/pca-biplot.png" alt="PCA biplot showing movies projected onto PC1/PC2 with variable loading vectors" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading, needs the actual chart</span>
-    This one requires looking at your real biplot image, since the arrow directions depend entirely on how
-    your specific data correlates. For each pair of arrows: if two point in nearly the same direction, those
+    <span class="tag">Reading: </span>
+    For each pair of arrows: if two point in nearly the same direction, those
     variables tend to increase together across films in your dataset; if two point in opposite directions,
     higher values of one tend to come with lower values of the other; if two are roughly perpendicular,
     they vary independently. Longer arrows mean that variable contributes more strongly to PC1/PC2
     specifically (a variable could still matter a lot overall while having a short arrow here, if its main
-    influence falls on PC3–PC6 instead).
+    influence falls on PC3–PC6 instead). Average rating and runtime are in same direction. 
   </div>
 
   <h3>PC1/PC2 scatter, colored by era</h3>
   <img src="assets/pca-scatter-by-era.png" alt="Movies plotted on PC1 and PC2, colored by theatrical versus streaming era" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading — needs the actual chart</span>
-    Also needs visual inspection of your real chart: do the two era colors separate into visibly different
-    regions, or mostly overlap? Given startYear is one of the 6 input features, some separation is expected
-    by construction — the more informative question is whether the separation follows a single axis (one
-    component effectively encodes "era") or cuts diagonally across both PC1 and PC2.
+    <span class="tag">Reading: </span>
+    The two era colors separate into visibly different mostly overlap. Given startYear is one of the 6 input features, some separation is expected
+    by construction, the more informative is the separation follows cuts diagonally across both PC1 and PC2.
   </div>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
