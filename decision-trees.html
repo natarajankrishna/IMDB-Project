@@ -180,13 +180,13 @@ for name, params in trees.items():
   <table>
     <thead><tr><th>Tree</th><th>Settings</th><th class="num">Leaves</th><th class="num">Train accuracy</th><th class="num">Test accuracy</th></tr></thead>
     <tbody>
-      <tr><td>Tree 1</td><td>Gini, max depth 3</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>Tree 2</td><td>Entropy, max depth 3</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>Tree 3</td><td>Gini, max depth 5, min 500 films per leaf</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>Baseline</td><td>Always guess the most common class</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Tree 1</td><td>Gini, max depth 3</td><td class="num">8</td><td class="num">0.513</td><td class="num">0.515</td></tr>
+      <tr><td>Tree 2</td><td>Entropy, max depth 3</td><td class="num">8</td><td class="num">0.513</td><td class="num">0.515</td></tr>
+      <tr><td>Tree 3</td><td>Gini, max depth 5, min 500 films per leaf</td><td class="num">26</td><td class="num">0.547</td><td class="num">0.543</td></tr>
+      <tr><td>Baseline</td><td>Always guess the most common class</td><td class="num">N/A</td><td class="num">N/A</td><td class="num">0.543</td></tr>
     </tbody>
   </table>
-  <p class="dim">Fill from your console output or <code>dt_metrics.json</code>.</p>
+  <p class="dim">All test scores use the same 24,575 films, which no tree saw during training. For comparison, Naïve Bayes scored 0.504 (Multinomial), 0.528 (Bernoulli), and 0.531 (Gaussian) on exactly these films. <code>dt_metrics.json</code>.</p>
 
   <h3>Tree 1 — Gini, depth 3</h3>
   <img src="assets/dt-tree-1-gini-depth3.png" alt="Decision tree using Gini impurity with maximum depth 3" onerror="this.style.display='none'">
@@ -201,10 +201,8 @@ for name, params in trees.items():
   <h3>Tree 3 — Gini, depth 5</h3>
   <img src="assets/dt-tree-3-gini-depth5.png" alt="Larger decision tree using Gini impurity with maximum depth 5" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Which feature does each tree ask about at the root? Do Tree 1 and Tree 2 (same depth, different
-    criterion) pick the same first question? What new questions appear in Tree 3 that the smaller trees
-    never reached?
+    <span class="tag">Reading: </span>
+    Genre documentry, samples and gini is the feature each tree ask about at the root.Tree 2 selects entropy instead of gini like tree 1. Tree 3 has almost similar questions to previous trees.
   </div>
 
   <h3>Confusion matrices and accuracy</h3>
@@ -212,25 +210,22 @@ for name, params in trees.items():
   <p class="dim">Rows are the actual class, columns the predicted class; each cell also shows the share of
   that actual class.</p>
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Compare each tree's accuracy to the one-third baseline and to each other. Which class does each tree
-    predict best, and is the Medium class the hardest (it often is, since it sits between the extremes)?
-    Is the larger Tree 3 actually better on the testing set, or only on the training set?
+    <span class="tag">Reading: </span>
+    All three trees beat the 34.3% baseline by a wide margin: Tree 1 classified 51.5% of the test films correctly, Tree 2 51.5%, and Tree 3 54.3%, which is 17 to 20 percentage points above guessing. The two small trees behave alike: both recognize Low films best (61.4% of them correct) and both lean toward predicting Low, which makes up 39.3% of their predictions. They are weakest on Medium (44.4% and 43.6% correct), and they send 19.3% of High films all the way down to Low. Tree 3 spreads its accuracy more evenly across the tiers: 51.9% of Low, 53.7% of Medium, and 57.5% of High films were correct. Its Medium recall is about 10 points higher than that of the smaller trees, and the most serious mistakes (Low labeled High or High labeled Low) fall from roughly 13% of those films to 8.8%. The price is Low recall, which drops from 61.4% to 51.9%. In every tree, Medium remains the hardest tier to identify, since it sits between the other two.
   </div>
 
   <h3>How deep should a tree be?</h3>
   <img src="assets/dt-depth-curve.png" alt="Training and testing accuracy as tree depth increases" style="max-width:640px;" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Training accuracy keeps climbing as the tree deepens, but testing accuracy eventually stalls or falls.
-    Where does that gap open up? That is overfitting: the tree is memorizing the training films.
+    <span class="tag">Reading: </span>
+    Across depths 1 to 15, test accuracy was highest at a maximum depth of 11, where it reached 0.577. That is well above the 0.543 of the depth-5 tree, so allowing many more questions still helped. (Tree 3 also required at least 500 films per leaf, a restriction the trees in this depth comparison did not have, so depth is not the only difference.) Two cautions apply. The depth was chosen by looking at testing-set accuracy, which makes 0.577 slightly optimistic; a cleaner estimate would come from a separate validation set or cross-validation. And a tree that deep is far too large to read as a set of rules, so the gain in accuracy costs the interpretability that makes trees attractive.
   </div>
 
   <h3>Which features matter most</h3>
   <img src="assets/dt-feature-importance.png" alt="Feature importances of the best-performing tree" style="max-width:560px;" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Name the top features and what they suggest about how structure relates to rating tier.
+    <span class="tag">Reading: </span>
+    The chart shows the top features of Tree 3, which had the best testing accuracy of the three trees.
   </div>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
@@ -238,11 +233,14 @@ for name, params in trees.items():
   <!-- ============================================================ -->
   <h2>(e) Conclusions</h2>
   <div class="placeholder">
-    <span class="tag">Add after results</span>
-    What did the trees reveal about which attributes separate low-, medium-, and high-rated films, in plain
-    language (for example, "films with many votes and longer runtimes tend to land in the High tier")?
-    How accurate were they, and how does that compare with Naïve Bayes on the identical test films?
-    Which model would you trust more, and why?
+    <span class="tag">Results: </span>
+    Decision trees predicted rating tier more accurately than Naïve Bayes, and the advantage grew with tree size. On the same 24,575 test films, the small 8-leaf trees (0.515) beat Multinomial Naïve Bayes (0.504) but trailed Bernoulli (0.528) and Gaussian (0.531). The 26-leaf Tree 3 (0.543) beat all three Naïve Bayes variants, and a tree allowed to grow to depth 11 reached 0.577, about 23 percentage points above the 34.3% baseline. Branching rules that let features interact therefore capture something that additive probabilistic evidence misses.
+
+Accuracy is only part of the picture; the pattern of mistakes also changed. The two depth-3 trees were good at spotting Low films but over-predicted that tier and often mistook High films for Low. Tree 3 was more balanced across tiers and cut the most serious errors, Low labeled High or High labeled Low, from roughly 13% of those films to 8.8%, which is better than Naïve Bayes at 13.1%. Gini and entropy produced nearly identical trees (0.515 and 0.515), so the choice between them is not what limits performance.
+
+These trees are not overfitting, and the real constraint is size. Training and testing accuracy stayed within half a point of each other for all three trees (Tree 1 scored slightly higher on test than on training), meaning the trees were too small to memorize the training films. Test accuracy peaked at a depth of 11, higher than at any shallower depth, so added complexity captured real patterns rather than noise, at least up to that point. The trade-off is readability: Tree 1 can be understood in a glance, while the best-scoring tree cannot be read as a set of rules at all.
+
+For the project's topic, a film's structural profile predicts its rating tier well above chance, yet even the best tree labels about four in ten films incorrectly, and the readable trees miss roughly half. That supports the Introduction's framing: runtime, release year, genre mix, international reach, franchise status, and vote volume matter, and they interact, but a large share of what audiences reward is not captured by this kind of metadata. As on the Naïve Bayes tab, vote count is measured after release and reflects audience engagement as well as film structure, so part of the predictive signal may come from popularity rather than from how a film is built.
   </div>
 </main>
 
