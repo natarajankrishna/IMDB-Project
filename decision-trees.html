@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Decision Trees</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naive-bayes.html">Naïve Bayes</a>
+      <a href="decision-trees.html" class="active">Decision Trees</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 06</p>
+  <h1>Decision Trees</h1>
+  <p class="subtitle">Learning a readable set of yes-or-no rules that sort films into the Low, Medium, or
+  High rating tier.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+  <p>A decision tree is a supervised model that predicts an outcome by asking a sequence of simple
+  questions about an item's features, each answered yes or no, until it reaches a final answer. It is drawn
+  as an upside-down tree. The <strong>root node</strong> at the top holds all the training data and asks the
+  first question. Each <strong>internal node</strong> asks a further question, such as "is the runtime
+  at most 104 minutes?", and sends items down a left or right <strong>branch</strong>. Each
+  <strong>leaf</strong> at the bottom holds no more questions, only a prediction: the most common class among
+  the training items that reached it. Trees handle both classification and regression, accept numeric and
+  categorical features, need no feature scaling, and, most importantly, can be read and checked by a
+  person. That is why they are used in credit decisions, medical triage, customer-churn analysis, and any
+  setting where the reason for a prediction matters as much as the prediction.</p>
+
+  <img src="assets/dt-overview-structure.png" alt="Anatomy of a decision tree showing root, internal nodes, and leaves" style="max-width:720px;" onerror="this.style.display='none'">
+  <p class="dim">An illustrative tree on toy data (not the movie dataset), showing the root, internal
+  nodes, branches, and leaves.</p>
+
+  <h3>How a tree chooses its questions: Gini, Entropy, and Information Gain</h3>
+  <p>A tree is grown from the top down. At each node it tries many candidate questions and keeps the one
+  that makes the resulting groups as <em>pure</em> as possible, meaning each group is dominated by a single
+  class. Two common measures quantify impurity, and both equal zero for a perfectly pure node and are
+  largest when the classes are evenly mixed:</p>
+  <pre><code>Gini impurity  =  1 − Σ pᵢ²
+Entropy        =  − Σ pᵢ · log₂(pᵢ)          (pᵢ = share of the node belonging to class i)</code></pre>
+  <p>Gini is slightly cheaper to compute (no logarithm), while entropy, borrowed from information theory,
+  measures how much "surprise" remains in the node and penalizes mixed nodes a little more steeply. In
+  practice they usually choose the same or very similar splits. To judge a candidate split, the tree
+  compares impurity before and after. <strong>Information gain</strong> is the parent node's impurity minus
+  the size-weighted average impurity of its child nodes. The split with the largest gain is chosen.
+  (With Gini the same quantity is often called Gini gain.)</p>
+
+  <img src="assets/dt-overview-impurity.png" alt="Gini impurity and entropy plotted against class proportion" style="max-width:560px;" onerror="this.style.display='none'">
+
+  <h3>A small worked example</h3>
+  <p>Suppose a node holds 10 films: 6 rated High and 4 rated Low (hypothetical numbers chosen to be easy to
+  check by hand). Two candidate questions are compared.</p>
+  <ul>
+    <li><strong>Parent node:</strong> Gini = 1 − (0.6² + 0.4²) = <strong>0.480</strong>;
+        Entropy = −(0.6·log₂0.6 + 0.4·log₂0.4) = <strong>0.971</strong></li>
+  </ul>
+  <table>
+    <thead>
+      <tr><th>Candidate split</th><th>Left child</th><th>Right child</th>
+          <th class="num">Weighted Gini</th><th class="num">Gini gain</th>
+          <th class="num">Weighted entropy</th><th class="num">Information gain</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>A: runtime &gt; 100 min</td><td>5 films: 4 High, 1 Low</td><td>5 films: 2 High, 3 Low</td>
+          <td class="num">0.400</td><td class="num">0.080</td><td class="num">0.846</td><td class="num">0.125</td></tr>
+      <tr><td>B: 2 or more genres</td><td>4 films: 4 High, 0 Low</td><td>6 films: 2 High, 4 Low</td>
+          <td class="num">0.267</td><td class="num">0.213</td><td class="num">0.551</td><td class="num">0.420</td></tr>
+    </tbody>
+  </table>
+  <p>For Split A, the left child has Gini 1 − (0.8² + 0.2²) = 0.32 and the right child 1 − (0.4² + 0.6²) =
+  0.48, so the weighted Gini is (5/10)(0.32) + (5/10)(0.48) = 0.40 and the gain is 0.48 − 0.40 = 0.08. For
+  Split B, the left child is perfectly pure (Gini 0) and the right child has Gini 1 − ((1/3)² + (2/3)²) =
+  0.444, giving a weighted Gini of (4/10)(0) + (6/10)(0.444) = 0.267 and a gain of 0.213. Split B produces
+  more than twice the gain of Split A under Gini and more than three times under entropy, so the tree
+  would choose Split B. Both measures agree on the winner.</p>
+
+  <h3>Why so many different trees are possible</h3>
+  <p>For any dataset there are infinitely many trees that could be built. A tree can ask about any feature
+  at any node, and the same feature can be asked about again lower down. For a numeric feature, the
+  threshold can be any real number: a cut at a runtime of 104.5 minutes and a cut at 104.9 minutes may send
+  exactly the same films left and right, yet they are different trees. Questions can be arranged in
+  different orders, depth can grow without limit, and stopping or pruning rules can end branches early or
+  late. Many different trees fit the same training data equally well, and a tree grown until every leaf is
+  pure will fit the training data perfectly while generalizing poorly. Because the best possible tree
+  cannot be found by trying them all, practical algorithms grow one tree greedily, choosing the best single
+  split at each step, and limit its size. This is why this project builds and compares three different
+  trees rather than treating any one as the answer.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+
+  <h3>Labeled data</h3>
+  <p>Supervised learning requires <strong>labeled data</strong>: every film must come with its correct
+  answer so the tree has something to learn from and be scored against, and only labeled data can be used.
+  The label is the same rating tier used on the Naïve Bayes tab: <em>Low</em>, <em>Medium</em>, or
+  <em>High</em>, created by cutting the average IMDb rating at its 33rd and 67th percentiles into three
+  equal-sized classes. The rating itself is excluded from the inputs. Because scikit-learn trees require
+  numeric inputs, every feature is numeric: log vote count, runtime, release year, number of genres,
+  number of international regions, a 0/1 franchise flag, and twelve 0/1 genre indicators. Trees need no
+  rescaling, so the values are used as they are.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/labeled-data-sample.png" alt="Sample of the labeled dataset" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/labeled-data-sample.png</span>')">
+  </div>
+  <p><strong>Link to the labeled data:</strong>
+  <a href="data/labeled_data.csv" target="_blank">data/labeled_data.csv</a></p>
+
+  <h3>Training and testing sets</h3>
+  <p>The labeled data was randomly divided, with stratification so each class keeps its proportion, into a
+  <strong>training set (80%)</strong> used to grow the trees and a <strong>testing set (20%)</strong> used
+  only to score them. This is the identical split used for Naïve Bayes, so the two methods are compared on
+  exactly the same films.</p>
+  <p>The two sets <strong>must be disjoint</strong>. Decision trees are especially prone to memorization: a
+  deep tree can carve out a leaf for nearly every training film, and tested on those same films it would
+  look nearly perfect while knowing nothing useful about new ones. Scoring on films the tree has never seen
+  is the only way to measure whether it learned real patterns. Disjointness was checked in code, which
+  confirmed that no film appears in both sets.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/train-set-sample.png" alt="Sample of the training set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/train-set-sample.png</span>')">
+  </div>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/test-set-sample.png" alt="Sample of the testing set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/test-set-sample.png</span>')">
+  </div>
+  <p><strong>Links:</strong>
+  <a href="data/train_set.csv" target="_blank">data/train_set.csv</a> ·
+  <a href="data/test_set.csv" target="_blank">data/test_set.csv</a></p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Python with scikit-learn. Full script:
+  <a href="scripts/decision_trees.py" target="_blank">scripts/decision_trees.py</a>
+  (the data prep at the top of the file matches the Naïve Bayes script, and both load the same saved
+  train/test files).</p>
+
+  <pre><code>from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+trees = {
+    "Tree 1: Gini, depth 3":    dict(criterion="gini",    max_depth=3),
+    "Tree 2: Entropy, depth 3": dict(criterion="entropy", max_depth=3),
+    "Tree 3: Gini, depth 5":    dict(criterion="gini",    max_depth=5, min_samples_leaf=500),
+}
+for name, params in trees.items():
+    clf = DecisionTreeClassifier(random_state=42, **params).fit(X_train, y_train)
+    pred = clf.predict(X_test)
+    print(name, accuracy_score(y_test, pred))
+    print(confusion_matrix(y_test, pred, labels=["Low", "Medium", "High"]))
+    plot_tree(clf, feature_names=feature_cols, class_names=list(clf.classes_), filled=True)
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+  <p>Three different trees were grown on the same training data. They differ in splitting measure and
+  size, which shows how much the choice of tree changes both the rules and the accuracy.</p>
+
+  <table>
+    <thead><tr><th>Tree</th><th>Settings</th><th class="num">Leaves</th><th class="num">Train accuracy</th><th class="num">Test accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>Tree 1</td><td>Gini, max depth 3</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Tree 2</td><td>Entropy, max depth 3</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Tree 3</td><td>Gini, max depth 5, min 500 films per leaf</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Baseline</td><td>Always guess the most common class</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Fill from your console output or <code>dt_metrics.json</code>.</p>
+
+  <h3>Tree 1 — Gini, depth 3</h3>
+  <img src="assets/dt-tree-1-gini-depth3.png" alt="Decision tree using Gini impurity with maximum depth 3" onerror="this.style.display='none'">
+  <p class="dim">How to read a node: the first line is the question (films answering yes go left); below it
+  are the node's impurity, the number of training films reaching it, and <code>value</code>, the count of
+  films in each class in alphabetical order (High, Low, Medium). The color shows the majority class, and
+  darker means purer.</p>
+
+  <h3>Tree 2 — Entropy, depth 3</h3>
+  <img src="assets/dt-tree-2-entropy-depth3.png" alt="Decision tree using entropy with maximum depth 3" onerror="this.style.display='none'">
+
+  <h3>Tree 3 — Gini, depth 5</h3>
+  <img src="assets/dt-tree-3-gini-depth5.png" alt="Larger decision tree using Gini impurity with maximum depth 5" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which feature does each tree ask about at the root? Do Tree 1 and Tree 2 (same depth, different
+    criterion) pick the same first question? What new questions appear in Tree 3 that the smaller trees
+    never reached?
+  </div>
+
+  <h3>Confusion matrices and accuracy</h3>
+  <img src="assets/dt-confusion-matrices.png" alt="Confusion matrices for the three decision trees" onerror="this.style.display='none'">
+  <p class="dim">Rows are the actual class, columns the predicted class; each cell also shows the share of
+  that actual class.</p>
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Compare each tree's accuracy to the one-third baseline and to each other. Which class does each tree
+    predict best, and is the Medium class the hardest (it often is, since it sits between the extremes)?
+    Is the larger Tree 3 actually better on the testing set, or only on the training set?
+  </div>
+
+  <h3>How deep should a tree be?</h3>
+  <img src="assets/dt-depth-curve.png" alt="Training and testing accuracy as tree depth increases" style="max-width:640px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Training accuracy keeps climbing as the tree deepens, but testing accuracy eventually stalls or falls.
+    Where does that gap open up? That is overfitting: the tree is memorizing the training films.
+  </div>
+
+  <h3>Which features matter most</h3>
+  <img src="assets/dt-feature-importance.png" alt="Feature importances of the best-performing tree" style="max-width:560px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Name the top features and what they suggest about how structure relates to rating tier.
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add after results</span>
+    What did the trees reveal about which attributes separate low-, medium-, and high-rated films, in plain
+    language (for example, "films with many votes and longer runtimes tend to land in the High tier")?
+    How accurate were they, and how does that compare with Naïve Bayes on the identical test films?
+    Which model would you trust more, and why?
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 06 of 07</footer>
+
+</body>
+</html>

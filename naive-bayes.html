@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Naïve Bayes</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naive-bayes.html" class="active">Naïve Bayes</a>
+      <a href="decision-trees.html">Decision Trees</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 05</p>
+  <h1>Naïve Bayes</h1>
+  <p class="subtitle">Predicting whether a film lands in the Low, Medium, or High rating tier from its
+  structural attributes, using a probabilistic classifier.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+  <p>Naïve Bayes (NB) is a family of supervised classification algorithms built on <strong>Bayes'
+  theorem</strong>. Given the features describing an item, NB calculates the probability that the item
+  belongs to each possible class and predicts the class with the highest probability. Bayes' theorem
+  expresses that calculation as the prior probability of the class (how common it is overall) multiplied by
+  the likelihood of seeing these particular features within that class:</p>
+
+  <pre><code>P(class | features)  ∝  P(class) × P(feature₁ | class) × P(feature₂ | class) × … × P(featureₙ | class)</code></pre>
+
+  <p>The word <strong>"naïve"</strong> refers to one simplifying assumption: given the class, every
+  feature is treated as independent of every other. That is rarely literally true (a film's runtime and
+  genre count are related, for example), but the assumption collapses an otherwise intractable joint
+  probability into a simple product of one-feature probabilities. The result is a model that trains in a
+  single pass over the data, needs relatively little data to produce stable estimates, scales to very many
+  features, and often classifies well even when the independence assumption is only roughly satisfied.
+  NB is widely used for spam filtering, document and sentiment classification, medical diagnosis support,
+  and any setting where fast, lightweight probabilistic predictions are valuable.</p>
+
+  <h3>Multinomial Naïve Bayes</h3>
+  <p>Multinomial NB is the standard version, designed for features that represent <em>counts or
+  frequencies</em>, such as how many times each word appears in a document. For each class it estimates
+  how much of the total "count mass" each feature accounts for, using additive (Laplace) smoothing so that
+  a feature never seen in a class during training does not force that class's probability to zero:</p>
+  <pre><code>P(featureᵢ | class)  =  (count of featureᵢ in class + α)  /  (total count in class + α × number of features)</code></pre>
+  <p>Because it works with counts, Multinomial NB requires <strong>non-negative</strong> feature values. It
+  is the version used as the primary model in this project, with each numeric feature rescaled to the
+  0 to 1 range so that all values are non-negative and comparable in size.</p>
+
+  <h3>Bernoulli Naïve Bayes</h3>
+  <p>Bernoulli NB is designed for <em>binary</em> features, each recording only whether something is present
+  (1) or absent (0). Unlike Multinomial NB, which ignores a feature that is absent, Bernoulli NB explicitly
+  models absence as evidence too: a film <em>not</em> being a Horror title counts toward the class
+  probabilities just as being one does. It is a natural fit for short documents and yes/no indicators. Here
+  it is applied to the genre indicator flags, the franchise flag, and the numeric features converted to
+  "above or below the training-set median."</p>
+
+  <table>
+    <thead><tr><th>Variant</th><th>Feature type</th><th>Absent features</th><th>Used here for</th></tr></thead>
+    <tbody>
+      <tr><td>Multinomial NB</td><td>Non-negative counts / frequencies</td><td>Ignored</td><td>Primary model (features scaled 0–1)</td></tr>
+      <tr><td>Bernoulli NB</td><td>Binary (0/1)</td><td>Counted as evidence</td><td>Comparison (genre flags + median splits)</td></tr>
+      <tr><td>Gaussian NB</td><td>Continuous, roughly bell-shaped</td><td>Not applicable</td><td>Extra comparison on raw values</td></tr>
+    </tbody>
+  </table>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+
+  <h3>Labeled data</h3>
+  <p>Supervised learning requires <strong>labeled data</strong>: every example must come with the correct
+  answer so that the model has something to learn from and be scored against. Only labeled data can be used
+  for supervised methods. The label here is the film's <strong>rating tier</strong>, created by splitting
+  the average IMDb rating at its 33rd and 67th percentiles into three equally sized classes:
+  <em>Low</em>, <em>Medium</em>, and <em>High</em>. Equal class sizes mean that guessing is right about a
+  third of the time, which makes accuracy easy to interpret. The rating itself is then <em>removed</em>
+  from the inputs, so the model must predict the tier from structure alone.</p>
+  <p>The inputs are numeric only, as scikit-learn requires: log-transformed vote count, runtime, release
+  year, number of genres, number of international regions, a 0/1 franchise flag (from the title-pattern
+  heuristic), and twelve 0/1 indicator columns for the most common genres.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/labeled-data-sample.png" alt="Sample of the labeled dataset" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/labeled-data-sample.png</span>')">
+  </div>
+  <p class="dim">A few rows and a subset of columns; the full file has all twelve genre indicators.</p>
+  <p><strong>Link to the labeled data:</strong>
+  <a href="data/labeled_data.csv" target="_blank">data/labeled_data.csv</a></p>
+
+  <h3>Training and testing sets</h3>
+  <p>The labeled data was randomly divided into a <strong>training set (80%)</strong>, used to build the
+  model, and a <strong>testing set (20%)</strong>, used only to measure how well the finished model
+  performs. The split was <em>stratified</em>, meaning each set preserves the same Low / Medium / High
+  proportions as the whole, and it was done by film, so each film appears in exactly one set.</p>
+  <p>The two sets <strong>must be disjoint</strong> (share no films). A model evaluated on films it already
+  saw during training is being quizzed on its own answer key: it can score well by memorizing rather than
+  by learning patterns that carry over to new films. Keeping the testing set completely unseen is what
+  makes the accuracy figure an honest estimate of performance on films the model has never encountered.
+  Disjointness was verified in code rather than assumed, and any scaling or median thresholds were
+  calculated from the training set alone and then applied to the testing set.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/train-set-sample.png" alt="Sample of the training set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/train-set-sample.png</span>')">
+  </div>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/test-set-sample.png" alt="Sample of the testing set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/test-set-sample.png</span>')">
+  </div>
+  <img src="assets/nb-label-distribution.png" alt="Class balance in the training and testing sets" style="max-width:520px;" onerror="this.style.display='none'">
+  <p><strong>Links:</strong>
+  <a href="data/train_set.csv" target="_blank">data/train_set.csv</a> ·
+  <a href="data/test_set.csv" target="_blank">data/test_set.csv</a></p>
+  <div class="placeholder">
+    <span class="tag">Fill in from your run</span>
+    State the label cutoffs your run printed ("Low &le; __ &lt; Medium &le; __ &lt; High") and the row counts
+    of the training and testing sets.
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Python with scikit-learn. Full script:
+  <a href="scripts/naive_bayes.py" target="_blank">scripts/naive_bayes.py</a>
+  (the label creation, feature building, and disjoint train/test split are at the top of the file; the
+  Decision Trees tab reuses the same split).</p>
+
+  <pre><code>from sklearn.naive_bayes import MultinomialNB, BernoulliNB
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+# Multinomial NB needs non-negative features -> scale to 0-1, fitting on TRAINING data only
+scaler = MinMaxScaler().fit(X_train)
+mnb = MultinomialNB(alpha=1.0).fit(scaler.transform(X_train), y_train)
+
+pred = mnb.predict(scaler.transform(X_test))
+print(accuracy_score(y_test, pred))
+print(confusion_matrix(y_test, pred, labels=["Low", "Medium", "High"]))
+
+# Bernoulli NB on binary features (numeric columns split at the training median)
+bnb = BernoulliNB(alpha=1.0).fit(binarize(X_train), y_train)
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+
+  <table>
+    <thead><tr><th>Model</th><th class="num">Test accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline: always guess the most common class</td><td class="num">—</td></tr>
+      <tr><td>Multinomial NB (primary)</td><td class="num">—</td></tr>
+      <tr><td>Bernoulli NB</td><td class="num">—</td></tr>
+      <tr><td>Gaussian NB (extra)</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Fill from your console output or <code>nb_metrics.json</code>.</p>
+
+  <h3>Confusion matrix — Multinomial NB</h3>
+  <img src="assets/nb-confusion-matrix.png" alt="Confusion matrix for Multinomial Naive Bayes" style="max-width:560px;" onerror="this.style.display='none'">
+  <p class="dim">Rows are the actual class, columns the predicted class. The diagonal shows correct
+  predictions; each cell also shows the share of that actual class (row percentage).</p>
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Report the accuracy and compare it to the one-third baseline. Which class is predicted best (highest
+    diagonal percentage), and which is most often confused with another? Do mistakes mostly land on the
+    neighboring tier (Low mistaken for Medium) or jump across (Low mistaken for High)?
+  </div>
+
+  <h3>Model comparison</h3>
+  <img src="assets/nb-model-comparison.png" alt="Accuracy of three Naive Bayes variants compared with a baseline" style="max-width:600px;" onerror="this.style.display='none'">
+  <img src="assets/nb-confusion-matrix-bernoulli.png" alt="Confusion matrix for Bernoulli Naive Bayes" style="max-width:560px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which variant did best, and by how much? Offer a reason tied to the data: Bernoulli NB discards the
+    exact size of numeric features, while Multinomial NB treats scaled values as if they were counts.
+  </div>
+
+  <h3>What separates the classes</h3>
+  <img src="assets/nb-class-feature-means.png" alt="Average scaled feature values for each rating class" style="max-width:560px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which features differ most across Low, Medium, and High (look for rows where the three values spread
+    apart)? These are the features NB is leaning on.
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add after results</span>
+    What can structural attributes alone predict about a film's rating tier? Is accuracy meaningfully above
+    chance, and is it good enough to be useful? Name the features that carry the signal, and note the
+    limits of NB's independence assumption for features that are clearly related (such as vote count and
+    international reach).
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 05 of 07</footer>
+
+</body>
+</html>
