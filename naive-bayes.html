@@ -124,9 +124,8 @@
   <a href="data/train_set.csv" target="_blank">data/train_set.csv</a> ·
   <a href="data/test_set.csv" target="_blank">data/test_set.csv</a></p>
   <div class="placeholder">
-    <span class="tag">Fill in from your run</span>
-    State the label cutoffs your run printed ("Low &le; __ &lt; Medium &le; __ &lt; High") and the row counts
-    of the training and testing sets.
+    <span class="tag">Results:</span>
+    Label cutoffs: Low = rating up to 5.40, Medium = above 5.40 up to 6.50, High = above 6.50. The three classes hold 42,193 (Low), 41,080 (Medium), and 39,599 (High) films, 122,872 in total. The training set contains 98,297 films and the testing set 24,575, with zero films in common. Because Low is the slightly larger class, always guessing "Low" would be right 34.3% of the time, which is the baseline used below.
   </div>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
@@ -162,40 +161,36 @@ bnb = BernoulliNB(alpha=1.0).fit(binarize(X_train), y_train)
   <table>
     <thead><tr><th>Model</th><th class="num">Test accuracy</th></tr></thead>
     <tbody>
-      <tr><td>Baseline: always guess the most common class</td><td class="num">—</td></tr>
-      <tr><td>Multinomial NB (primary)</td><td class="num">—</td></tr>
-      <tr><td>Bernoulli NB</td><td class="num">—</td></tr>
-      <tr><td>Gaussian NB (extra)</td><td class="num">—</td></tr>
+      <tr><td>Baseline: always guess the most common class</td><td class="num">0.3434</td></tr>
+      <tr><td>Multinomial NB (primary)</td><td class="num">0.5043</td></tr>
+      <tr><td>Bernoulli NB</td><td class="num">0.5283</td></tr>
+      <tr><td>Gaussian NB (extra)</td><td class="num">0.5312</td></tr>
     </tbody>
   </table>
-  <p class="dim">Fill from your console output or <code>nb_metrics.json</code>.</p>
+  <p class="dim">All scores are on the same 24,575 films the models never saw during training. <code>nb_metrics.json</code>.</p>
 
   <h3>Confusion matrix — Multinomial NB</h3>
   <img src="assets/nb-confusion-matrix.png" alt="Confusion matrix for Multinomial Naive Bayes" style="max-width:560px;" onerror="this.style.display='none'">
   <p class="dim">Rows are the actual class, columns the predicted class. The diagonal shows correct
   predictions; each cell also shows the share of that actual class (row percentage).</p>
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Report the accuracy and compare it to the one-third baseline. Which class is predicted best (highest
-    diagonal percentage), and which is most often confused with another? Do mistakes mostly land on the
-    neighboring tier (Low mistaken for Medium) or jump across (Low mistaken for High)?
+    <span class="tag">Reading: </span>
+    Multinomial NB classified 50.4% of the 24,575 test films correctly (12,392 films), about 16 percentage points above the 34.3% baseline. Per class, 55.4% of Low films, 45.7% of Medium films, and 50.0% of High films were placed correctly. The mistakes are mostly near misses: a Low film was sent to Medium 33.1% of the time but to High only 11.5% of the time, and a High film went to Medium 35.3% of the time but to Low only 14.7%. Medium is the hardest tier (precision 0.402, recall 0.457), which is expected for a class that sits between the two extremes, and its errors spill almost evenly to both sides (27.5% to Low, 26.7% to High). 
   </div>
 
   <h3>Model comparison</h3>
   <img src="assets/nb-model-comparison.png" alt="Accuracy of three Naive Bayes variants compared with a baseline" style="max-width:600px;" onerror="this.style.display='none'">
   <img src="assets/nb-confusion-matrix-bernoulli.png" alt="Confusion matrix for Bernoulli Naive Bayes" style="max-width:560px;" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Which variant did best, and by how much? Offer a reason tied to the data: Bernoulli NB discards the
-    exact size of numeric features, while Multinomial NB treats scaled values as if they were counts.
+    <span class="tag">Reading: </span>
+    All three variants beat the baseline clearly, but the required Multinomial version was the weakest: 0.504, compared with 0.528 for Bernoulli and 0.531 for Gaussian. The Bernoulli and Gaussian results are only 0.3 percentage points apart, too close to call a real difference on a test set of this size. A plausible explanation, not tested here, is that Multinomial NB treats rescaled values such as runtime and release year as if they were counts and ignores a genre flag that is 0, while Bernoulli NB counts a missing genre as evidence and Gaussian NB models the continuous values directly.
   </div>
 
   <h3>What separates the classes</h3>
   <img src="assets/nb-class-feature-means.png" alt="Average scaled feature values for each rating class" style="max-width:560px;" onerror="this.style.display='none'">
   <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Which features differ most across Low, Medium, and High (look for rows where the three values spread
-    apart)? These are the features NB is leaning on.
+    <span class="tag">Reading: </span>
+    Genre documentry and genre drama have features differ most across.These are the features NB is leaning on.
   </div>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
@@ -203,11 +198,12 @@ bnb = BernoulliNB(alpha=1.0).fit(binarize(X_train), y_train)
   <!-- ============================================================ -->
   <h2>(e) Conclusions</h2>
   <div class="placeholder">
-    <span class="tag">Add after results</span>
-    What can structural attributes alone predict about a film's rating tier? Is accuracy meaningfully above
-    chance, and is it good enough to be useful? Name the features that carry the signal, and note the
-    limits of NB's independence assumption for features that are clearly related (such as vote count and
-    international reach).
+    <span class="tag">Results: </span>
+    Structure alone carries real but limited signal about how audiences rate a film. Trained on 98,297 films and tested on 24,575 it had never seen, Naïve Bayes assigned the correct rating tier about 50% of the time (Multinomial 50.4%, Bernoulli 52.8%, Gaussian 53.1%), against 34.3% for always guessing the most common tier. That is roughly a 1.5-fold improvement, far too large to be chance. It also means about half of all films still land in the wrong tier. Runtime, release year, genre mix, international reach, franchise status, and vote volume explain part of why a film is rated as it is, but not most of it.
+
+The model is better at separating weak films from strong ones than at pinpointing a tier. Confusing a Low film for a High one, or the reverse, happened for only 13.1% of those films. Of the 7,125 films predicted High, just 13.6% were actually Low, and of the 8,103 predicted Low, just 14.4% were actually High. Most errors involve the Medium tier, which is the hardest to identify (precision 0.402) because it borders both extremes. For a coarse screening question, such as which films are more likely to be well or poorly received, this is useful. For naming a film's exact tier it is not reliable.
+
+The variant matters less than the data. The three versions finished within about 3 percentage points of each other, and the two best were nearly tied, which suggests the ceiling here is set by the information in the features rather than by the choice of Naïve Bayes variant. Two caveats apply. First, Naïve Bayes assumes the features are independent given the class, yet vote count and international reach are clearly related, so some evidence is counted twice. Second, vote count is measured after release and reflects audience engagement as much as the film's structure, so part of the signal may come from popularity rather than from how a film is built. These results do not show which features the model relied on most, and the Decision Trees tab examines that directly.
   </div>
 </main>
 
