@@ -25,6 +25,7 @@ OUTPUT: output/charts/ada-overview-rounds.png, ada-overview-alpha.png, ada-overv
 import os
 import json
 import time
+import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,6 +36,9 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Harmless message from some scikit-learn versions (AdaBoost hands plain arrays to its stumps); hide it.
+warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
 DATA_DIR = "output/data"
 SAMPLES_DIR = "output/samples"
