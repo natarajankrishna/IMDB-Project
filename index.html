@@ -16,8 +16,10 @@
       <a href="eda.html">DataPrep / EDA</a>
       <a href="clustering.html">Clustering</a>
       <a href="pca.html">PCA</a>
-      <a href="naive-bayes.html">Naive Bayes</a>
+      <a href="naive-bayes.html">Naïve Bayes</a>
       <a href="decision-trees.html">Decision Trees</a>
+      <a href="regression.html">Regression</a>
+      <a href="adaboost.html">AdaBoost</a>
       <a href="conclusions.html">Conclusions</a>
     </div>
   </div>
@@ -41,7 +43,7 @@
     circuits, and each one is eventually reduced to a single number: an aggregate audience rating. On IMDb alone,
     hundreds of thousands of votes are cast on any given popular title, blending into a weighted score that
     shapes how a film is discovered, discussed, and remembered. Yet the path from a finished film to that number
-    is anything but simple. A movie's reception depends on a tangle of factors: genre conventions, runtime,
+    is anything but simple. A movie's reception depends on a tangle of factors — genre conventions, runtime,
     pacing, cast recognition, directorial reputation, marketing reach, cultural timing, and the shifting tastes
     of the audiences who watch it. Some of these factors are structural and measurable, like runtime or release
     year; others are far more subjective, like tone, originality, or emotional resonance. Understanding which of
@@ -50,8 +52,8 @@
     ratings are, in effect, a crowdsourced verdict on quality, and studying the patterns behind them reveals as
     much about collective taste and behavior as it does about the films themselves. This makes the subject a rich
     intersection of media studies, cultural analysis, and quantitative pattern-finding. Because rating platforms
-    increasingly influence what gets watched next, through recommendation algorithms, curated lists, and word of
-    mouth, the forces shaping a rating are not just descriptive of the past, but influential over what audiences
+    increasingly influence what gets watched next — through recommendation algorithms, curated lists, and word of
+    mouth — the forces shaping a rating are not just descriptive of the past, but influential over what audiences
     will encounter in the future. A deeper understanding of these dynamics has value well beyond entertainment
     trivia; it touches on how information, popularity, and perceived quality circulate in a media-saturated world.</p>
 
@@ -73,31 +75,71 @@
     genre, or on sentiment analysis of written reviews to gauge critical reception. Other work, most notably
     around the Netflix Prize competition in the mid-2000s, focused on predicting individual user preferences
     rather than aggregate audience consensus. Comparatively less attention has been paid to the structural,
-    non-financial attributes of a film, such as runtime, genre combinations, release timing, and franchise
-    status and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
+    non-financial attributes of a film — such as runtime, genre combinations, release timing, and franchise
+    status — and how these connect to the eventual crowd-rated verdict a film receives, which is the gap this
     project aims to explore.</p>
 
     <img src="assets/intro-clapperboard.jpg" alt="Film production clapperboard" style="width:100%; border-radius:4px; margin: 8px 0 24px;" onerror="this.style.display='none'">
 
     <p>Answering these questions requires moving past a single summary statistic and treating a film's
-    structural profile its runtime, genre mix, release timing, geographic reach, and the volume and
-    intensity of audience engagement it draws as a multi-dimensional signature rather than a handful of
+    structural profile — its runtime, genre mix, release timing, geographic reach, and the volume and
+    intensity of audience engagement it draws — as a multi-dimensional signature rather than a handful of
     disconnected numbers. Two complementary analytical approaches make this possible. Unsupervised
-    clustering can reveal whether films naturally group into distinct structural types, for instance,
+    clustering can reveal whether films naturally group into distinct structural "types" — for instance,
     long-runtime genre-blending releases with wide international distribution versus shorter, narrowly
-    genred films with more concentrated audiences, without ever being told in advance what those groups
+    genred films with more concentrated audiences — without ever being told in advance what those groups
     should look like. Dimensionality reduction techniques, particularly Principal Component Analysis, can
     then condense that multi-dimensional structural signature down to the handful of underlying patterns
     that explain most of the variation between films, making it possible to visualize and reason about
     relationships that would otherwise require tracking six or more numeric attributes simultaneously.
-    Applying these methods to structural, non-subjective attributes, deliberately setting aside plot,
-    dialogue, or critical commentary, tests whether measurable patterns in how a film is built and
+    Applying these methods to structural, non-subjective attributes — deliberately setting aside plot,
+    dialogue, or critical commentary — tests whether measurable patterns in how a film is built and
     distributed carry a detectable relationship to how audiences come to rate it, independent of anything
     a critic or marketer might say about its quality. The Clustering and PCA sections of this project walk
     through exactly that process: preparing the data these methods require, applying both techniques, and
     reporting what patterns, if any, emerge from the numbers alone.</p>
 
-    <p>Description naturally leads to prediction. Clustering and dimensionality reduction show how films differ from one another without reference to any outcome, while supervised learning asks a sharper question: can those structural differences be used to forecast which side of a quality line a film will land on? Framed this way, audience ratings become a classification problem. Given a film's runtime, genre tags, release year, international reach, franchise status, and the volume of audience engagement it draws, can a model sort it into a low, medium, or high rating tier more accurately than chance? The answer matters to anyone who must decide which films to fund, promote, or recommend before audience verdicts have fully settled, since even a modest edge in forecasting reception can shift how attention and budget are allocated. Two families of supervised methods suit this question for different reasons. Naïve Bayes treats each attribute as independent evidence and combines those pieces of evidence probabilistically, a strategy that is fast, works with limited data, and often remains competitive even when its independence assumption is only roughly true. Decision trees instead learn a sequence of yes-or-no questions about a film's attributes, producing human-readable rules that show not only what a model predicts but why, which is valuable when the goal is understanding rather than prediction alone. Comparing the two reveals whether rating tiers are better captured by additive probabilistic evidence or by branching rules that let attributes interact. Equally important is what a weak result would mean: if neither method predicts rating tiers well, that is evidence that the qualities audiences reward live largely in content, craft, and cultural moment, which numbers like runtime and genre count cannot see. The Naïve Bayes and Decision Trees sections test these possibilities directly, using labeled data divided into disjoint training and testing sets so that accuracy reflects genuine predictive ability rather than memorization.</p>
+    <p>Description naturally leads to prediction. Clustering and dimensionality reduction show how films
+    differ from one another without reference to any outcome, while supervised learning asks a sharper
+    question: can those structural differences be used to forecast which side of a quality line a film
+    will land on? Framed this way, audience ratings become a classification problem. Given a film's
+    runtime, genre tags, release year, international reach, franchise status, and the volume of audience
+    engagement it draws, can a model sort it into a low, medium, or high rating tier more accurately than
+    chance? The answer matters to anyone who must decide which films to fund, promote, or recommend before
+    audience verdicts have fully settled, since even a modest edge in forecasting reception can shift how
+    attention and budget are allocated. Two families of supervised methods suit this question for
+    different reasons. Naïve Bayes treats each attribute as independent evidence and combines those pieces
+    of evidence probabilistically, a strategy that is fast, works with limited data, and often remains
+    competitive even when its independence assumption is only roughly true. Decision trees instead learn a
+    sequence of yes-or-no questions about a film's attributes, producing human-readable rules that show
+    not only what a model predicts but why, which is valuable when the goal is understanding rather than
+    prediction alone. Comparing the two reveals whether rating tiers are better captured by additive
+    probabilistic evidence or by branching rules that let attributes interact. Equally important is what
+    a weak result would mean: if neither method predicts rating tiers well, that is evidence that the
+    qualities audiences reward live largely in content, craft, and cultural moment, which numbers like
+    runtime and genre count cannot see. The Naïve Bayes and Decision Trees sections test these
+    possibilities directly, using labeled data divided into disjoint training and testing sets so that
+    accuracy reflects genuine predictive ability rather than memorization.</p>
+
+    <p>Sorting films into tiers, however, throws information away. A film rated 6.4 and one rated 5.5 are
+    both labeled Medium, while a film rated 6.6 is labeled High despite being nearly identical to the 6.4
+    film. Regression restores that detail by predicting the rating itself as a number, and it offers
+    something classifiers do not provide as directly: coefficients that state, in plain units, how much a
+    film's predicted rating moves with each additional ten minutes of runtime, each doubling of audience
+    votes, or the presence of a particular genre. Its companion technique, logistic regression, turns the
+    same kind of weighted evidence into the probability that a film belongs to the top tier, which makes
+    uncertainty explicit instead of forcing a flat yes or no. A different idea drives boosting, the family of
+    methods that begins with AdaBoost. Rather than relying on one carefully constructed model, boosting
+    assembles hundreds of very simple ones, each trained to concentrate on the films its predecessors
+    misjudged, and combines them through a weighted vote. That is a demanding test for a target as noisy as
+    audience ratings, where no single structural rule is likely to separate films cleanly but many weak rules
+    together might. It also sharpens a pointed question about the limits of the data: if a patient sequence
+    of simple models extracts only a modest gain over a single tree, the remaining uncertainty is probably
+    a matter of information missing from the features rather than of modeling skill. Comparing regression
+    with Naïve Bayes, and AdaBoost with the decision trees, on identical training and testing films shows
+    which modeling ideas add real predictive value and which merely rearrange the same limited signal. The
+    Regression and AdaBoost sections apply these methods to the full set of structural attributes and report
+    how far each one can go.</p>
   </section>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
@@ -117,8 +159,8 @@
       <li>Are sequels and franchise entries rated differently, on average, than standalone or original films?</li>
       <li>Does a film's country of origin or primary language correlate with differences in its recorded
         IMDb rating?</li>
-      <li>Does the breadth of a film's international release, how many countries or regions it was
-        distributed in, relate to how audiences rate it?</li>
+      <li>Does the breadth of a film's international release — how many countries or regions it was
+        distributed in — relate to how audiences rate it?</li>
       <li>Is there a relationship between the number of genres tagged to a film and how audiences rate it?</li>
       <li>Has the distribution of audience ratings changed since the rise of streaming platforms, compared to
         the traditional theatrical era?</li>
@@ -139,7 +181,7 @@
   </section>
 </main>
 
-<footer>Updated September 2026 · Section 01 of 05</footer>
+<footer>Updated September 2026 · Section 01 of 09</footer>
 
 </body>
 </html>
