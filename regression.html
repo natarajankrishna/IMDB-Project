@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — Regression</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naive-bayes.html">Naïve Bayes</a>
+      <a href="decision-trees.html">Decision Trees</a>
+      <a href="regression.html" class="active">Regression</a>
+      <a href="adaboost.html">AdaBoost</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 07</p>
+  <h1>Regression</h1>
+  <p class="subtitle">Predicting a film's rating as a number with linear regression, and the chance of a
+  High rating with logistic regression.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+
+  <h3>Linear regression: predicting a number</h3>
+  <p>Linear regression predicts a <strong>numeric</strong> target. It models the target as a weighted sum
+  of the input features plus a constant:</p>
+  <pre><code>predicted value  =  b0  +  b1 × (feature 1)  +  b2 × (feature 2)  +  …  +  bn × (feature n)</code></pre>
+  <p>The weights, called <strong>coefficients</strong>, are chosen by <em>least squares</em>: the line (or,
+  with many features, the flat surface) that makes the total of the squared gaps between predicted and actual
+  values as small as possible. Those gaps are the <em>residuals</em>, drawn in red below. Each coefficient
+  states how much the prediction changes when that feature rises by one unit while the others are held
+  fixed, which is what makes the model easy to explain. Its quality is judged with three numbers:
+  <strong>RMSE</strong> (the typical size of an error, in the units of the target), <strong>MAE</strong>
+  (the average absolute error), and <strong>R²</strong> (the share of the variation in the target that the
+  model explains, where 0 means no better than always predicting the average and 1 means perfect).
+  The method assumes, roughly, that the relationship is linear, that errors have similar spread and are
+  independent of one another, and that no two features are near-copies of each other.</p>
+
+  <img src="assets/reg-overview-linear.png" alt="Linear regression best-fit line with residuals" style="max-width:640px;" onerror="this.style.display='none'">
+  <p class="dim">Illustrative toy data (not the movie dataset).</p>
+
+  <h3>Logistic regression: predicting a probability, then a class</h3>
+  <p>Logistic regression predicts a <strong>category</strong>; in its basic form, one of two. Despite the
+  name, it is a classification method. It starts from the same weighted sum, called the
+  <strong>linear score</strong> <em>z</em>, which can be any number from very negative to very positive.
+  A probability must stay between 0 and 1, so <em>z</em> is passed through the
+  <strong>sigmoid</strong> function:</p>
+  <pre><code>p = 1 / (1 + e^(−z))          z = b0 + b1·x1 + b2·x2 + …</code></pre>
+  <p>A large positive <em>z</em> gives a probability near 1, a large negative <em>z</em> gives one near 0, and
+  <em>z</em> = 0 gives exactly 0.5. The probability then becomes a class with a <strong>threshold</strong>:
+  by default, predict the positive class when <em>p</em> ≥ 0.5. The model is fitted by <em>maximum
+  likelihood</em> rather than least squares: it chooses the coefficients that make the observed labels as
+  probable as possible, which has no closed-form answer and is solved by iteration.</p>
+
+  <table>
+    <thead><tr><th class="num">Linear score z</th><th class="num">Probability p</th><th class="num">Odds p / (1 − p)</th><th>Predicted class (threshold 0.5)</th></tr></thead>
+    <tbody>
+      <tr><td class="num">−4</td><td class="num">0.018</td><td class="num">0.018</td><td>0</td></tr>
+      <tr><td class="num">−2</td><td class="num">0.119</td><td class="num">0.135</td><td>0</td></tr>
+      <tr><td class="num">0</td><td class="num">0.500</td><td class="num">1.000</td><td>1 (p ≥ 0.5)</td></tr>
+      <tr><td class="num">+2</td><td class="num">0.881</td><td class="num">7.389</td><td>1</td></tr>
+      <tr><td class="num">+4</td><td class="num">0.982</td><td class="num">54.598</td><td>1</td></tr>
+    </tbody>
+  </table>
+
+  <img src="assets/reg-overview-sigmoid.png" alt="Sigmoid curve turning a linear score into a probability, and a straight line escaping the 0 to 1 range" onerror="this.style.display='none'">
+  <p class="dim">Left: the sigmoid turns any linear score into a probability. Right: a straight line fitted to
+  0/1 labels predicts impossible values below 0 and above 1; the sigmoid cannot.</p>
+
+  <h3>What the coefficients mean</h3>
+  <p>The linear score <em>z</em> is the <strong>log-odds</strong>: <em>z</em> = ln( p / (1 − p) ). The
+  <em>odds</em> of an event are its probability divided by the probability that it does not happen, so a
+  probability of 0.75 is odds of 3 to 1. Raising a feature by one unit adds its coefficient <em>b</em> to
+  <em>z</em>, which multiplies the odds by <strong>e<sup>b</sup></strong>. A coefficient of 0 leaves the
+  odds unchanged, a positive coefficient raises them, a negative one lowers them, and a coefficient of
+  0.69 doubles them (e<sup>0.69</sup> ≈ 2).</p>
+
+  <table>
+    <thead><tr><th></th><th>Linear regression</th><th>Logistic regression</th></tr></thead>
+    <tbody>
+      <tr><td>Predicts</td><td>A number (any value)</td><td>A probability, then a class</td></tr>
+      <tr><td>Target</td><td>Numeric (here, the rating)</td><td>Two classes (here, High vs. not High)</td></tr>
+      <tr><td>Fitted by</td><td>Least squares (minimize squared errors)</td><td>Maximum likelihood (minimize log loss)</td></tr>
+      <tr><td>Judged by</td><td>RMSE, MAE, R²</td><td>Confusion matrix, accuracy, AUC</td></tr>
+      <tr><td>A coefficient means</td><td>Change in the predicted value per unit</td><td>Change in the log-odds per unit; odds × e<sup>b</sup></td></tr>
+    </tbody>
+  </table>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+
+  <h3>Labeled data and the two targets</h3>
+  <p>Supervised learning requires <strong>labeled data</strong>: every film comes with the answer the model
+  is trying to predict. Two different targets are used here, one per method:</p>
+  <table>
+    <thead><tr><th>Method</th><th>Target column</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td>Linear regression</td><td><code>averageRating</code></td><td>The film's average IMDb rating, a number between 1 and 10 (numeric target)</td></tr>
+      <tr><td>Logistic regression</td><td><code>is_high</code></td><td>1 if the film is in the High rating tier (rating above 6.50, the top third), otherwise 0 (two-class label)</td></tr>
+      <tr><td>Extra comparison</td><td><code>rating_class</code></td><td>The three tiers Low / Medium / High from Part 3, used for a like-for-like comparison with Naïve Bayes</td></tr>
+    </tbody>
+  </table>
+  <p>The inputs are the same 18 numeric columns used in Part 3: log-transformed vote count, runtime, release
+  year, number of genres, number of international regions, a 0/1 franchise flag, and twelve 0/1 genre
+  indicators. The rating itself is never an input. About 32% of films are High, so always guessing
+  "Not High" would be right 67.8% of the time on the testing set; that is the baseline for logistic
+  regression, and it is why recall and AUC are reported alongside accuracy. For logistic regression the five
+  numeric inputs are converted to z-scores using the training set's mean and standard deviation (the 0/1
+  flags are left alone); linear regression uses the raw values, so its coefficients stay in natural units.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/regression-data-sample.png" alt="Sample of the regression data showing both targets and the inputs" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/regression-data-sample.png</span>')">
+  </div>
+  <p><strong>Link to the data:</strong>
+  <a href="data/regression_data.csv" target="_blank">data/regression_data.csv</a>
+  (all 122,872 films, with a <code>split</code> column marking each as train or test).</p>
+
+  <h3>Training and testing sets</h3>
+  <p>The training set (<strong>98,297</strong> films) builds each model and the testing set
+  (<strong>24,575</strong> films) measures it. They are the <em>same</em> sets used for Naïve Bayes and
+  Decision Trees in Part 3, so results can be compared directly. The split was random, stratified by rating
+  tier, and made by film, so every film is in exactly one set and the two share nothing.</p>
+  <p>The sets <strong>must be disjoint</strong>. Regression models, too, can fit the particular films they
+  were trained on more closely than they will fit new films; scoring on those same films would flatter the
+  model and report an error smaller than the one it will make on films it has never seen. The overlap was
+  checked in code and found to be zero.</p>
+
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/regression-train-sample.png" alt="Sample of the training set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/regression-train-sample.png</span>')">
+  </div>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/regression-test-sample.png" alt="Sample of the testing set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/regression-test-sample.png</span>')">
+  </div>
+  <p class="dim">The same split as Part 3:
+  <a href="data/train_set.csv" target="_blank">data/train_set.csv</a> ·
+  <a href="data/test_set.csv" target="_blank">data/test_set.csv</a></p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Python with scikit-learn. Full script:
+  <a href="scripts/regression.py" target="_blank">scripts/regression.py</a></p>
+
+  <pre><code>from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+# LINEAR regression: numeric target
+lin = LinearRegression().fit(X_train, train["averageRating"])
+pred = lin.predict(X_test)
+rmse = mean_squared_error(test["averageRating"], pred) ** 0.5
+mae = mean_absolute_error(test["averageRating"], pred)
+r2 = r2_score(test["averageRating"], pred)
+
+# LOGISTIC regression: two-class target (1 = High tier, 0 = not High)
+logit = LogisticRegression(max_iter=2000).fit(X_train_scaled, train["is_high"])
+proba = logit.predict_proba(X_test_scaled)[:, 1]      # probability of "High"
+pred = (proba >= 0.5).astype(int)                      # threshold -> class
+print(accuracy_score(test["is_high"], pred))
+print(confusion_matrix(test["is_high"], pred))
+odds_ratios = np.exp(logit.coef_[0])                   # what each coefficient does to the odds
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+
+  <h3>Linear regression</h3>
+  <table>
+    <thead><tr><th>Measure (testing set)</th><th class="num">Linear regression</th><th class="num">Baseline: always predict the average rating</th></tr></thead>
+    <tbody>
+      <tr><td>RMSE</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>MAE</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>R²</td><td class="num">—</td><td class="num">0 (by definition)</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Fill from your console output or <code>regression_metrics.json</code>.</p>
+
+  <img src="assets/reg-pred-vs-actual.png" alt="Predicted versus actual ratings for linear regression" style="max-width:620px;" onerror="this.style.display='none'">
+  <p class="dim">Each cell counts test films. A perfect model would put every film on the gold diagonal.</p>
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    State the RMSE, MAE, and R² and compare them with the baseline. Describe the shape of the cloud: is it
+    centered on the diagonal, and does it look flatter than the diagonal (predictions squeezed toward the
+    middle, with the lowest and highest ratings missed)?
+  </div>
+
+  <h3>Two coefficients in plain words</h3>
+  <img src="assets/reg-linear-coefficients.png" alt="Largest standardized coefficients of the linear regression" style="max-width:640px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Use the "plain-language effects" printed by the script. For example: "Holding everything else fixed, each
+    doubling of a film's vote count raises its predicted rating by __ points" and "each additional 10 minutes
+    of runtime changes the predicted rating by __ points." Also note the sign and size of one genre
+    coefficient.
+  </div>
+
+  <h3>Logistic regression: High tier vs. not High</h3>
+  <table>
+    <thead><tr><th>Measure (testing set)</th><th class="num">Logistic regression</th></tr></thead>
+    <tbody>
+      <tr><td>Accuracy</td><td class="num">—</td></tr>
+      <tr><td>Baseline accuracy (always "Not High")</td><td class="num">0.678</td></tr>
+      <tr><td>Recall for High (share of High films found)</td><td class="num">—</td></tr>
+      <tr><td>Precision for High (share of "High" predictions that are right)</td><td class="num">—</td></tr>
+      <tr><td>ROC AUC</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+
+  <img src="assets/reg-confusion-matrix-logistic.png" alt="Confusion matrix for logistic regression" style="max-width:520px;" onerror="this.style.display='none'">
+  <img src="assets/reg-logistic-probabilities.png" alt="Predicted probabilities of High, split by actual class" style="max-width:600px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Report the accuracy against the 67.8% baseline. Because the classes are unbalanced, say how many of the
+    actual High films the model found (recall) and how often a "High" prediction was right (precision). In
+    the probability chart, how much do the two groups overlap? Overlap near the 0.5 line is where mistakes
+    come from.
+  </div>
+
+  <h3>One coefficient and the odds</h3>
+  <img src="assets/reg-logistic-odds-ratios.png" alt="Odds ratios of the largest logistic regression effects" style="max-width:640px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Pick one coefficient and state its effect on the odds. For example: "Each doubling of vote count
+    multiplies the odds of a High rating by __" (taken from the script's odds multipliers), or "A Horror
+    film has __ times the odds of being rated High compared with an otherwise identical non-Horror film"
+    (the odds ratio is e raised to the coefficient).
+  </div>
+
+  <h3>Comparison with Naïve Bayes (Part 3)</h3>
+  <p>On the same three rating tiers and the same 24,575 test films, multinomial logistic regression can be
+  scored against the three Naïve Bayes variants from Part 3. On the two-class task, Gaussian Naïve Bayes is
+  refit so the comparison with logistic regression is like for like.</p>
+  <table>
+    <thead><tr><th>Three tiers (Low / Medium / High)</th><th class="num">Test accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline: always guess the most common tier</td><td class="num">0.343</td></tr>
+      <tr><td>Naïve Bayes, Multinomial (Part 3)</td><td class="num">0.504</td></tr>
+      <tr><td>Naïve Bayes, Bernoulli (Part 3)</td><td class="num">0.528</td></tr>
+      <tr><td>Naïve Bayes, Gaussian (Part 3)</td><td class="num">0.531</td></tr>
+      <tr><td>Logistic regression, three tiers</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <thead><tr><th>Two classes (High vs. not High)</th><th class="num">Accuracy</th><th class="num">ROC AUC</th><th class="num">Recall for High</th></tr></thead>
+    <tbody>
+      <tr><td>Logistic regression</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Gaussian Naïve Bayes</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <img src="assets/reg-model-comparison.png" alt="Logistic regression compared with the three Naive Bayes variants" style="max-width:640px;" onerror="this.style.display='none'">
+  <img src="assets/reg-confusion-matrix-3class.png" alt="Confusion matrix for three-tier logistic regression" style="max-width:520px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which did better, logistic regression or Naïve Bayes, and by how many percentage points? Offer a reason:
+    Naïve Bayes treats every feature as independent evidence, while logistic regression learns how the
+    features should be weighted against one another, which matters when features such as vote count and
+    international reach move together.
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add after results</span>
+    What can structural attributes predict about a film's rating? Summarize how close the predicted
+    ratings come to the real ones (RMSE and R²), how well the High tier can be identified, which features
+    push a rating or its odds up or down, and what the unexplained remainder suggests about the limits of
+    structure alone.
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 07 of 09</footer>
+
+</body>
+</html>

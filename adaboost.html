@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting IMDb Ratings — AdaBoost</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="filmstrip-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">IMDb Rating Study</a>
+    <div class="nav-tabs">
+      <a href="index.html">Introduction</a>
+      <a href="eda.html">DataPrep / EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naive-bayes.html">Naïve Bayes</a>
+      <a href="decision-trees.html">Decision Trees</a>
+      <a href="regression.html">Regression</a>
+      <a href="adaboost.html" class="active">AdaBoost</a>
+      <a href="conclusions.html">Conclusions</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wide">
+  <p class="eyebrow">Section 08</p>
+  <h1>AdaBoost</h1>
+  <p class="subtitle">Combining hundreds of very simple decision stumps, each built to fix the mistakes of
+  the ones before it, to predict a film's rating tier.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(a) Overview</h2>
+
+  <h3>Boosting vs. bagging</h3>
+  <p><strong>Ensemble methods</strong> combine many models into one prediction. They come in two main
+  styles. <strong>Bagging</strong> (the idea behind random forests) trains many full-sized trees
+  <em>independently and in parallel</em>, each on a different random resample of the training data, then
+  averages their votes. Because every tree sees different data, their individual quirks tend to cancel,
+  which mainly reduces <em>variance</em>. <strong>Boosting</strong> works the opposite way: models are built
+  <em>one after another</em>, and each new model is trained to concentrate on the rows that the earlier ones
+  got wrong. The members are deliberately weak, and the combination is a weighted vote. Boosting mainly
+  reduces <em>bias</em>, turning many models that are only slightly better than guessing into a strong one.</p>
+
+  <img src="assets/ada-overview-bagging-vs-boosting.png" alt="Bagging builds trees in parallel; boosting builds stumps in sequence" onerror="this.style.display='none'">
+
+  <h3>Decision stumps</h3>
+  <p>AdaBoost's usual building block is the <strong>decision stump</strong>: a decision tree with exactly
+  one split, so a single yes-or-no question and two leaves, such as "does the film have more than 1,100
+  votes?" On its own, a stump is a weak learner, only a little better than guessing. That is the point: it is
+  simple, fast, and cannot overfit by itself, and boosting supplies the strength by combining many of them.</p>
+
+  <h3>How AdaBoost works, round by round</h3>
+  <ol style="padding-left:22px;">
+    <li><strong>Start equal.</strong> Every training row gets the same weight, 1/n.</li>
+    <li><strong>Fit a stump</strong> to the weighted data. Rows with a large weight count for more when the
+        stump picks its question.</li>
+    <li><strong>Measure its error ε:</strong> the total <em>weight</em> of the rows it classified wrongly.</li>
+    <li><strong>Give the stump a say, α</strong> (alpha), based on how accurate it was:
+        <code>α = ½ · ln((1 − ε) / ε)</code>.</li>
+    <li><strong>Reweight the rows.</strong> Multiply the weight of each row the stump got <em>wrong</em> by
+        e<sup>α</sup> and each row it got <em>right</em> by e<sup>−α</sup>, then rescale so the weights sum to 1.
+        The next stump is therefore pushed toward the hard cases.</li>
+    <li><strong>Repeat</strong> for a chosen number of rounds.</li>
+    <li><strong>Vote.</strong> To classify a new film, every stump votes for its predicted class with a strength
+        equal to its α, and the class with the largest total wins.</li>
+  </ol>
+
+  <img src="assets/ada-overview-rounds.png" alt="Toy example of three AdaBoost rounds and the final weighted vote" onerror="this.style.display='none'">
+  <p class="dim">Toy data. Marker size shows each row's weight; circled rows were misclassified by that
+  round's stump. Rows missed in one round are larger in the next, and the final panel is the weighted vote of
+  all three stumps.</p>
+
+  <h3>What alpha means</h3>
+  <p>Alpha is the stump's voting power. A stump that is rarely wrong (small ε) gets a large α and a loud
+  voice; a stump no better than a coin flip (ε = 0.5) gets α = 0 and no say at all; a stump worse than a coin
+  flip would get a negative α, which flips its vote.</p>
+  <table>
+    <thead><tr><th class="num">Weighted error ε</th><th class="num">Alpha</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0.1</td><td class="num">1.10</td><td>Very accurate: large say</td></tr>
+      <tr><td class="num">0.2</td><td class="num">0.69</td><td>Accurate: solid say</td></tr>
+      <tr><td class="num">0.5</td><td class="num">0.00</td><td>Coin flip: no say</td></tr>
+      <tr><td class="num">0.8</td><td class="num">−0.69</td><td>Worse than a coin flip: vote reversed</td></tr>
+    </tbody>
+  </table>
+
+  <h3>A worked example</h3>
+  <p>Suppose there are 10 rows, each with weight 0.10, and the first stump misclassifies 2 of them. Its
+  error is ε = 0.20, so α = ½ ln(0.8 / 0.2) = 0.693. The two wrong rows are multiplied by e<sup>0.693</sup> = 2,
+  giving 0.20 each; the eight correct rows are multiplied by e<sup>−0.693</sup> = 0.5, giving 0.05 each. The
+  weights now sum to 0.80, so dividing by 0.80 gives <strong>0.25</strong> for each wrong row and
+  <strong>0.0625</strong> for each correct one. The two rows that were 20% of the data now carry
+  <strong>50%</strong> of the total weight, so the next stump cannot ignore them.</p>
+  <p>The final vote works the same way. If Stump 1 (α = 0.9) predicts High, and Stumps 2 and 3 (α = 0.3 each)
+  both predict Low, then High scores 0.9 and Low scores 0.3 + 0.3 = 0.6, and the prediction is <strong>High</strong>
+  even though two of the three stumps disagreed. The more reliable stump outweighs the others.</p>
+
+  <img src="assets/ada-overview-alpha.png" alt="Stump weight alpha and row-weight multipliers as functions of the stump's error" onerror="this.style.display='none'">
+
+  <h3>Two details that matter for this project</h3>
+  <p><strong>More than two classes.</strong> The formula above is the two-class version. For three classes,
+  scikit-learn uses the multiclass variant (SAMME), where <code>α = learning rate × [ ln((1 − ε)/ε) + ln(K − 1) ]</code>
+  with K = 3 classes. The extra term means a stump keeps a positive weight as long as its error is below
+  <strong>2/3</strong>, which is "better than random guessing among three classes," rather than below 1/2.
+  <strong>Learning rate.</strong> The learning rate shrinks every stump's α. A smaller value makes each stump
+  contribute less, so more rounds are needed, but progress is steadier. The number of rounds and the learning
+  rate are the two settings tuned below.</p>
+  <p>Finally, because rows that are repeatedly misclassified keep gaining weight, AdaBoost can fixate on rows
+  that are mislabeled or simply unpredictable. That is a relevant caution for something as noisy as audience
+  ratings.</p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(b) Data Prep</h2>
+
+  <h3>Labeled data</h3>
+  <p>Supervised learning needs <strong>labeled data</strong>: each film must come with the correct answer so
+  the model can learn from it and be scored against it. The label is the rating tier used in Part 3 —
+  <em>Low</em> (rating up to 5.40), <em>Medium</em> (above 5.40 up to 6.50), or <em>High</em> (above 6.50) —
+  so AdaBoost can be compared directly with the Decision Tree. The rating itself is not an input.</p>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/labeled-data-sample.png" alt="Sample of the labeled dataset" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/labeled-data-sample.png</span>')">
+  </div>
+  <p><strong>Link to the labeled data:</strong> <a href="data/labeled_data.csv" target="_blank">data/labeled_data.csv</a></p>
+
+  <h3>Turning categorical columns into numbers (one-hot encoding)</h3>
+  <p>AdaBoost in scikit-learn accepts only numeric inputs, so any categorical column has to be converted.
+  Two columns in the cleaned data were categorical. The <code>genres</code> column holds text such as
+  "Drama,Crime", and a film can carry several genres at once. It was converted with
+  <strong>one-hot encoding</strong>: one new column per common genre, containing 1 if the film has that genre
+  and 0 if not (twelve columns, for the twelve most frequent genres). The <code>is_franchise_heuristic</code>
+  column, True or False, became 1 or 0. After this step every input is a number and no information is
+  lost for the genres kept.</p>
+  <pre><code># one-hot encoding: one 0/1 column per frequent genre
+genre_sets = df["genres"].str.split(",").apply(set)
+for g in top_genres:
+    df[f"genre_{g}"] = genre_sets.apply(lambda s: int(g in s))
+
+df["is_franchise"] = df["is_franchise_heuristic"].astype(int)   # True/False -> 1/0</code></pre>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/ada-onehot-step.png" alt="Before and after one-hot encoding of the genre and franchise columns" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/ada-onehot-step.png</span>')">
+  </div>
+
+  <h3>Training, validation, and testing sets</h3>
+  <p>The labeled films were split at random, stratified by tier, into a <strong>training set (98,297
+  films)</strong> and a <strong>testing set (24,575 films)</strong>, the same split used in Part 3. The two
+  are <strong>disjoint</strong>: each film is in exactly one. That matters because a model scored on films it
+  trained on is graded on its own answer key, which rewards memorization. Boosting can overfit too,
+  since it keeps adjusting itself to the training rows' mistakes round after round.</p>
+  <p>Tuning needs a third group. Choosing the number of rounds and the learning rate by looking at the
+  testing set would quietly leak test information into the model, so the <em>training</em> set was split once
+  more, at random and stratified by tier, into an <strong>inner-training set</strong> (about 78,600 films,
+  used to build each candidate model) and a <strong>validation set</strong> (about 19,700 films, used to
+  compare candidates and pick the settings). All three groups are disjoint. The testing set is used exactly
+  once, at the very end.</p>
+  <table>
+    <thead><tr><th>Set</th><th class="num">Films</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td>Inner-training</td><td class="num">≈ 78,600</td><td>Building each candidate AdaBoost model</td></tr>
+      <tr><td>Validation</td><td class="num">≈ 19,700</td><td>Choosing the number of rounds and the learning rate</td></tr>
+      <tr><td>Testing</td><td class="num">24,575</td><td>One final score, never used for tuning</td></tr>
+    </tbody>
+  </table>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/train-set-sample.png" alt="Sample of the training set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/train-set-sample.png</span>')">
+  </div>
+  <div class="placeholder" style="padding:8px;">
+    <img src="assets/test-set-sample.png" alt="Sample of the testing set" onerror="this.parentElement.querySelector('.tag')?.remove(); this.insertAdjacentHTML('afterbegin', '<span class=&quot;tag&quot;>Missing — add assets/test-set-sample.png</span>')">
+  </div>
+  <p><strong>Links:</strong>
+  <a href="data/train_set.csv" target="_blank">data/train_set.csv</a> ·
+  <a href="data/test_set.csv" target="_blank">data/test_set.csv</a></p>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(c) Code</h2>
+  <p>Python with scikit-learn. Full script:
+  <a href="scripts/adaboost.py" target="_blank">scripts/adaboost.py</a></p>
+
+  <pre><code>from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+stump = DecisionTreeClassifier(max_depth=1)            # a decision stump: one split
+ada = AdaBoostClassifier(estimator=stump, algorithm="SAMME",
+                         n_estimators=300, learning_rate=0.5, random_state=42)
+ada.fit(X_inner_train, y_inner_train)
+
+# validation accuracy after 1, 2, 3, ... 300 rounds
+val_acc = [accuracy_score(y_val, p) for p in ada.staged_predict(X_val)]
+
+# refit on the full training set with the chosen settings, then score on the testing set once
+final = AdaBoostClassifier(estimator=stump, algorithm="SAMME",
+                           n_estimators=best_n, learning_rate=best_lr).fit(X_train, y_train)
+print(accuracy_score(y_test, final.predict(X_test)))
+print(confusion_matrix(y_test, final.predict(X_test), labels=["Low", "Medium", "High"]))
+</code></pre>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(d) Results</h2>
+
+  <h3>Tuning the number of rounds and the learning rate</h3>
+  <p>Four learning rates (0.05, 0.1, 0.5, 1.0) were each run for up to 300 rounds, and accuracy on the
+  validation set was recorded after every round.</p>
+  <table>
+    <thead><tr><th class="num">Learning rate</th><th class="num">Best number of rounds</th><th class="num">Best validation accuracy</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0.05</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td class="num">0.1</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td class="num">0.5</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td class="num">1.0</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Fill from your console output (the "learning_rate=… best validation accuracy" lines).</p>
+  <img src="assets/ada-validation-curves.png" alt="Validation accuracy as boosting rounds are added, for four learning rates" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    State the chosen learning rate and number of rounds. Describe how validation accuracy changes as rounds
+    are added: does it climb quickly and then flatten? Do smaller learning rates need more rounds to reach
+    the same level? In the right-hand panel, is there a gap between training and validation accuracy, and does
+    it widen with more rounds?
+  </div>
+
+  <h3>Final accuracy and confusion matrix</h3>
+  <p>With the chosen settings, AdaBoost was refit on the full training set and scored once on the 24,575
+  testing films. For a fair comparison, the Part 3 decision tree was re-tuned the same way: its depth was
+  chosen on the validation set rather than the testing set.</p>
+  <table>
+    <thead><tr><th>Model</th><th class="num">Test accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline: always guess the most common tier</td><td class="num">0.343</td></tr>
+      <tr><td>A single decision stump</td><td class="num">—</td></tr>
+      <tr><td>Decision tree, depth chosen on validation (this tab)</td><td class="num">—</td></tr>
+      <tr><td>Decision tree, Part 3 Tree 3 (Gini, depth 5)</td><td class="num">0.543</td></tr>
+      <tr><td>AdaBoost, stumps</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">Part 3 also reported 0.577 for a depth-11 tree, but that depth was picked by looking at the
+  testing set, so it is slightly optimistic; the validation-tuned tree above is the fair comparison.</p>
+  <img src="assets/ada-confusion-matrices.png" alt="Confusion matrices for the tuned decision tree and AdaBoost" onerror="this.style.display='none'">
+  <img src="assets/ada-model-comparison.png" alt="Test accuracy of the baseline, a single stump, decision trees, and AdaBoost" style="max-width:660px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which model did best, and by how many percentage points? Compare the confusion matrices: which tiers
+    improved, and is Medium still the hardest? Note how far a single stump gets on its own, and how much of
+    the improvement comes from combining many of them.
+  </div>
+
+  <h3>Inside the ensemble</h3>
+  <img src="assets/ada-estimator-weights.png" alt="Weight alpha and weighted error for each stump across the boosting rounds" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Describe how alpha changes across rounds and how the weighted error behaves (it rises as the
+    re-weighted problems get harder). The script also saves the questions asked by the first eight stumps in
+    <code>ada_first_stumps.txt</code>; quote two of them in plain language, for example "Round 1 asks whether
+    a film has more than __ votes."
+  </div>
+  <img src="assets/ada-feature-importance.png" alt="Feature importances of the AdaBoost ensemble" style="max-width:560px;" onerror="this.style.display='none'">
+  <div class="placeholder">
+    <span class="tag">Add your reading</span>
+    Which features do the stumps rely on most? Compare with the features the Part 3 decision trees used.
+  </div>
+
+  <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
+
+  <!-- ============================================================ -->
+  <h2>(e) Conclusions</h2>
+  <div class="placeholder">
+    <span class="tag">Add after results</span>
+    Did boosting add meaningful accuracy over a single decision tree, or only a little? What does the size of
+    that gain say about whether the remaining errors come from the modeling method or from information missing
+    in the features? Which structural attributes did the ensemble lean on, and how would a studio or
+    platform use a model that sorts films into rating tiers with this accuracy?
+  </div>
+</main>
+
+<footer>Updated September 2026 · Section 08 of 09</footer>
+
+</body>
+</html>
