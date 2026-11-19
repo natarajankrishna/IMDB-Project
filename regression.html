@@ -188,63 +188,90 @@ odds_ratios = np.exp(logit.coef_[0])                   # what each coefficient d
   <table>
     <thead><tr><th>Measure (testing set)</th><th class="num">Linear regression</th><th class="num">Baseline: always predict the average rating</th></tr></thead>
     <tbody>
-      <tr><td>RMSE</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>MAE</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>R²</td><td class="num">—</td><td class="num">0 (by definition)</td></tr>
+      <tr><td>RMSE</td><td class="num">1.063</td><td class="num">1.315</td></tr>
+      <tr><td>MAE</td><td class="num">0.808</td><td class="num">1.047</td></tr>
+      <tr><td>R²</td><td class="num">0.347</td><td class="num">0 (by definition)</td></tr>
     </tbody>
   </table>
-  <p class="dim">Fill from your console output or <code>regression_metrics.json</code>.</p>
+  <p class="dim">Errors are in rating points, on the 24,575 testing films. Training-set R² was 0.342, almost identical to the testing-set 0.347, so the model is not overfitting.</p>
 
   <img src="assets/reg-pred-vs-actual.png" alt="Predicted versus actual ratings for linear regression" style="max-width:620px;" onerror="this.style.display='none'">
   <p class="dim">Each cell counts test films. A perfect model would put every film on the gold diagonal.</p>
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    State the RMSE, MAE, and R² and compare them with the baseline. Describe the shape of the cloud: is it
-    centered on the diagonal, and does it look flatter than the diagonal (predictions squeezed toward the
-    middle, with the lowest and highest ratings missed)?
-  </div>
+  <p>On films it had never seen, the linear model's predictions were off by <strong>0.81 rating
+  points on average</strong> (MAE) and by 1.06 points in the root-mean-square sense (RMSE). Always predicting
+  the average rating would have given 1.05 and 1.32, so the model cuts the typical error by about 23% (MAE)
+  and 19% (RMSE). Its <strong>R² of 0.347</strong> means the 18 structural features account for about
+  35% of the variation in ratings, and the other 65% is left unexplained.</p>
+  <p>Two consequences follow. First, an error of 0.8 points is nearly as wide as the entire Medium tier
+  (5.40 to 6.50, a span of 1.10), so the model can sort films roughly but cannot pinpoint a rating. Second,
+  a model that explains a third of the variation must produce predictions that are much less spread out than
+  the real ratings: for a least-squares fit, the spread of the predictions is about the square root of R²
+  times the spread of the actual values, roughly 0.6 here. Predicted ratings therefore cluster toward the
+  middle, and the lowest and highest ratings are systematically missed. This shows in the cloud above as a
+  band flatter than the gold diagonal.</p>
 
   <h3>Two coefficients in plain words</h3>
   <img src="assets/reg-linear-coefficients.png" alt="Largest standardized coefficients of the linear regression" style="max-width:640px;" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Use the "plain-language effects" printed by the script. For example: "Holding everything else fixed, each
-    doubling of a film's vote count raises its predicted rating by __ points" and "each additional 10 minutes
-    of runtime changes the predicted rating by __ points." Also note the sign and size of one genre
-    coefficient.
-  </div>
+  <p>Coefficients are in rating points, and each holds <em>everything else fixed</em>:</p>
+  <ul>
+    <li><strong>Audience votes (coefficient 0.226 per unit of log votes).</strong> Each doubling of a film's
+        vote count raises its predicted rating by about <strong>0.16 points</strong>. A film with 4,000 votes is
+        predicted to be rated about 0.16 points higher than an otherwise identical film with 2,000.</li>
+    <li><strong>Runtime (coefficient 0.0109 per minute).</strong> Each additional 10 minutes raises the
+        predicted rating by about <strong>0.11 points</strong>, so longer films tend to be rated slightly
+        higher.</li>
+  </ul>
+  <p>The largest effects belong to genre flags and are far bigger than the two above. A Documentary tag
+  adds about <strong>1.43 points</strong> to the predicted rating, a Horror tag subtracts about
+  <strong>1.03</strong>, and an Action tag subtracts about 0.54, each compared with an otherwise identical
+  film without that tag. Release year has a small negative effect: about 0.09 points lower per additional
+  decade. In standardized terms, which puts all features on one scale, the four largest are Documentary
+  (+0.43), vote count (+0.40), Horror (−0.34), and runtime (+0.24), as the chart shows. These are
+  associations in this dataset, not causes: a film does not become better by being longer, and vote count is
+  measured after release, so it reflects audience engagement as much as how the film was built.</p>
 
   <h3>Logistic regression: High tier vs. not High</h3>
   <table>
     <thead><tr><th>Measure (testing set)</th><th class="num">Logistic regression</th></tr></thead>
     <tbody>
-      <tr><td>Accuracy</td><td class="num">—</td></tr>
+      <tr><td>Accuracy</td><td class="num">0.773</td></tr>
       <tr><td>Baseline accuracy (always "Not High")</td><td class="num">0.678</td></tr>
-      <tr><td>Recall for High (share of High films found)</td><td class="num">—</td></tr>
-      <tr><td>Precision for High (share of "High" predictions that are right)</td><td class="num">—</td></tr>
-      <tr><td>ROC AUC</td><td class="num">—</td></tr>
+      <tr><td>Recall for High (share of High films found)</td><td class="num">0.481</td></tr>
+      <tr><td>Precision for High (share of "High" predictions that are right)</td><td class="num">0.722</td></tr>
+      <tr><td>ROC AUC</td><td class="num">0.808</td></tr>
     </tbody>
   </table>
 
   <img src="assets/reg-confusion-matrix-logistic.png" alt="Confusion matrix for logistic regression" style="max-width:520px;" onerror="this.style.display='none'">
   <img src="assets/reg-logistic-probabilities.png" alt="Predicted probabilities of High, split by actual class" style="max-width:600px;" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Report the accuracy against the 67.8% baseline. Because the classes are unbalanced, say how many of the
-    actual High films the model found (recall) and how often a "High" prediction was right (precision). In
-    the probability chart, how much do the two groups overlap? Overlap near the 0.5 line is where mistakes
-    come from.
-  </div>
+  <p>Logistic regression classified <strong>77.3%</strong> of the test films correctly, 9.5
+  percentage points above the 67.8% baseline of always answering "Not High." Accuracy alone flatters the
+  model here, because High is the minority class (32% of films), so the confusion matrix matters. Of the
+  16,655 films that were not High, 91.2% were identified correctly, and only 8.8% were wrongly flagged as
+  High. Of the 7,920 High films, however, the model found just <strong>48.1%</strong> (3,813 films) and
+  missed 51.9%. When it did predict High, it was right <strong>72.2%</strong> of the time (3,813 of 5,283).
+  The model is therefore cautious: it only says "High" when the evidence is fairly strong. Lowering the 0.5
+  threshold would catch more High films at the cost of more false alarms.</p>
+  <p>The <strong>ROC AUC of 0.808</strong> is a threshold-free measure: it is the chance that a randomly chosen
+  High film receives a higher predicted probability than a randomly chosen film that is not High. Because it
+  is well short of 1, the two groups' probabilities overlap substantially, and that overlap, mostly near the
+  0.5 line, is where the 5,577 mistakes come from.</p>
 
   <h3>One coefficient and the odds</h3>
   <img src="assets/reg-logistic-odds-ratios.png" alt="Odds ratios of the largest logistic regression effects" style="max-width:640px;" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Pick one coefficient and state its effect on the odds. For example: "Each doubling of vote count
-    multiplies the odds of a High rating by __" (taken from the script's odds multipliers), or "A Horror
-    film has __ times the odds of being rated High compared with an otherwise identical non-Horror film"
-    (the odds ratio is e raised to the coefficient).
-  </div>
+  <p>Because each coefficient adds to the log-odds, its effect on the <em>odds</em> of a High
+  rating is the number e raised to that coefficient:</p>
+  <ul>
+    <li><strong>Vote count.</strong> Each doubling of a film's votes multiplies its odds of being rated
+        High by <strong>1.39</strong>, an increase of about 39%. Across a full standard deviation of log
+        votes (roughly 5.8 times as many votes), the odds ratio is 2.29.</li>
+    <li><strong>Genre.</strong> A Documentary tag has an odds ratio of <strong>12.2</strong>, and a Horror tag
+        <strong>0.14</strong>, meaning about 86% lower odds. These are odds, not probabilities. A film that
+        would otherwise have a 30% chance of being High would have about an 84% chance as a documentary, and a
+        film with an otherwise even 50% chance would drop to about 12% as a horror film.</li>
+    <li><strong>Runtime and year.</strong> Each extra 10 minutes multiplies the odds by 1.22, and each extra
+        decade of release year multiplies them by 0.84.</li>
+  </ul>
 
   <h3>Comparison with Naïve Bayes (Part 3)</h3>
   <p>On the same three rating tiers and the same 24,575 test films, multinomial logistic regression can be
@@ -257,37 +284,61 @@ odds_ratios = np.exp(logit.coef_[0])                   # what each coefficient d
       <tr><td>Naïve Bayes, Multinomial (Part 3)</td><td class="num">0.504</td></tr>
       <tr><td>Naïve Bayes, Bernoulli (Part 3)</td><td class="num">0.528</td></tr>
       <tr><td>Naïve Bayes, Gaussian (Part 3)</td><td class="num">0.531</td></tr>
-      <tr><td>Logistic regression, three tiers</td><td class="num">—</td></tr>
+      <tr><td>Logistic regression, three tiers</td><td class="num"><strong>0.570</strong></td></tr>
     </tbody>
   </table>
   <table>
     <thead><tr><th>Two classes (High vs. not High)</th><th class="num">Accuracy</th><th class="num">ROC AUC</th><th class="num">Recall for High</th></tr></thead>
     <tbody>
-      <tr><td>Logistic regression</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-      <tr><td>Gaussian Naïve Bayes</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>Logistic regression</td><td class="num">0.773</td><td class="num">0.808</td><td class="num">0.481</td></tr>
+      <tr><td>Gaussian Naïve Bayes</td><td class="num">0.706</td><td class="num">0.767</td><td class="num">0.684</td></tr>
     </tbody>
   </table>
   <img src="assets/reg-model-comparison.png" alt="Logistic regression compared with the three Naive Bayes variants" style="max-width:640px;" onerror="this.style.display='none'">
   <img src="assets/reg-confusion-matrix-3class.png" alt="Confusion matrix for three-tier logistic regression" style="max-width:520px;" onerror="this.style.display='none'">
-  <div class="placeholder">
-    <span class="tag">Add your reading</span>
-    Which did better, logistic regression or Naïve Bayes, and by how many percentage points? Offer a reason:
-    Naïve Bayes treats every feature as independent evidence, while logistic regression learns how the
-    features should be weighted against one another, which matters when features such as vote count and
-    international reach move together.
-  </div>
+  <p><strong>Logistic regression was clearly more accurate than Naïve Bayes on both tasks.</strong>
+  On the three rating tiers it scored 0.570, compared with 0.504 for Multinomial, 0.528 for Bernoulli, and
+  0.531 for Gaussian Naïve Bayes: an advantage of 6.6, 4.2, and 3.9 percentage points. It identified more Low
+  films (64.5% against 55.4% for Multinomial Naïve Bayes) and more High films (61.2% against 50.0%), while
+  Medium stayed the hardest tier for both (45.3% against 45.7%). It also swapped Low and High in only 10.3% of
+  cases, against 13.1% for Multinomial Naïve Bayes. On the two-class task it beat
+  Gaussian Naïve Bayes in accuracy (0.773 against 0.706) and in AUC (0.808 against 0.767).</p>
+  <p>Naïve Bayes did find more High films (68.4% against 48.1%), but only by flagging many more films as
+  High and so making many more false alarms, which is why its accuracy is lower. The AUC, which does not
+  depend on a threshold, shows that logistic regression ranks films better overall. A likely reason is the
+  one built into each method: Naïve Bayes treats every feature as independent evidence and so counts
+  overlapping signals, such as vote count and international reach, more than once, whereas logistic
+  regression learns how the features should be weighted against one another.</p>
 
   <div class="reel-divider"><span><i></i><i></i><i></i></span></div>
 
   <!-- ============================================================ -->
   <h2>(e) Conclusions</h2>
-  <div class="placeholder">
-    <span class="tag">Add after results</span>
-    What can structural attributes predict about a film's rating? Summarize how close the predicted
-    ratings come to the real ones (RMSE and R²), how well the High tier can be identified, which features
-    push a rating or its odds up or down, and what the unexplained remainder suggests about the limits of
-    structure alone.
-  </div>
+  <p><strong>Structure explains about a third of what separates one film's rating from
+  another's.</strong> Linear regression predicted a film's rating to within 0.81 points on average, with an R²
+  of 0.347, a 23% smaller typical error than always guessing the average. That is real signal, but the
+  error is almost as wide as the whole Medium tier, so structural attributes can place a film roughly and not
+  precisely. Training and testing scores were nearly identical (R² 0.342 and 0.347), so this is a stable
+  result and not an artifact of overfitting.</p>
+  <p><strong>Genre and audience volume carry most of the signal.</strong> Holding other attributes fixed,
+  Documentary films are predicted about 1.4 points higher and Horror films about 1.0 point lower, Action films
+  trail by about 0.5, and each doubling of votes adds about 0.16 points. In odds terms, a Documentary tag
+  multiplies the odds of a High rating by 12 and a Horror tag cuts them by 86%. Longer runtimes are linked to
+  slightly higher ratings, and later release years to slightly lower ones. These are associations rather than
+  causes, and vote count in particular is measured after release, so it partly reflects how popular a film
+  became, not only how it was made.</p>
+  <p><strong>The High tier can be spotted with some reliability, but not found completely.</strong> Logistic
+  regression reached 77.3% accuracy against a 67.8% baseline and an AUC of 0.81. At the default threshold it
+  was right 72% of the time when it predicted High, yet it found only 48% of the films that really were High.
+  It is more useful for confirming that a film is a likely strong performer than for guaranteeing that
+  nothing strong is overlooked.</p>
+  <p><strong>For the project's topic,</strong> the comparison with Naïve Bayes is informative. Logistic
+  regression beat all three Naïve Bayes variants on the same test films, by 4 to 7 percentage points on the
+  three tiers, which indicates that how the features are weighted against one another matters, not only
+  which features are present. Even so, roughly 43% of films are placed in the wrong tier and about
+  two-thirds of the variation in ratings remains unexplained. That supports the Introduction's framing:
+  genre, audience size, and runtime are measurable and meaningful, while much of what audiences reward lies
+  in content, craft, and cultural moment that this kind of metadata cannot capture.</p>
 </main>
 
 <footer>Updated September 2026 · Section 07 of 09</footer>
